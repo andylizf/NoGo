@@ -23,19 +23,14 @@ int getwch_noblock() {
 	return _kbhit() ? _getwch() : -1;
 }
 
-string repeat(const string& word, int times) {
-	string result;
-	result.reserve(times * word.size());
-	for (int i = 0; i < times; i++)
-		result += word;
-	return result;
-}
 string repeat(const function<string(int)>&& genf, int times) {
-	string result = genf(0);
-	result.reserve(times * result.size());
-	for (int i = 1; i < times; i++)
-		result += genf(i);
-	return result;
+	std::ostringstream os;
+	for (int i = 0; i < times; i++)
+		os << genf(i);
+	return os.str();
+}
+string repeat(string word, int times) {
+	return repeat([word](auto _) { return word; }, times);
 }
 
 using PIndex = pair<int, char>;
@@ -183,7 +178,7 @@ struct BoardPrinter
 		for (auto i = 0; i < rank_n; i++) {
 			for (auto j = 0; j < rank_n; j++) {
 				if (!board[i][j]) continue;
-				Pair::print(board_corner + Pair{i, j} *cell - Pair{ 0, 1 },
+				Pair::print(board_corner + Pair{ i, j } *cell - Pair{ 0, 1 },
 					COLOR, ERASE, " ", ERASE, stonec[board[i][j] == 1], ERASE, " ");
 			}
 		} // TODO lazy update
