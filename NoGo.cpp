@@ -34,7 +34,7 @@ string repeat(string word, int times) {
 	return repeat([word](auto _) { return word; }, times);
 }
 
-constexpr int uninit_value = -2;
+constexpr int uninited = -2;
 
 using PIndex = pair<int, char>;
 
@@ -164,26 +164,26 @@ struct BoardPrinter
 	Pair from_index(PIndex index)
 	{
 		auto [digit, alpha] = index;
-		return { digit != uninit_value ? rank_n - digit : uninit_value,
-				 alpha != uninit_value ? index.second - 'A' : uninit_value };
+		return { digit != uninited ? rank_n - digit : uninited,
+				 alpha != uninited ? index.second - 'A' : uninited };
 	}
 	PIndex to_index(Pair pos)
 	{
-		return { pos.x != uninit_value ? rank_n - pos.x : uninit_value,
-				 pos.y != uninit_value ? 'A' + pos.y : uninit_value };
+		return { pos.x != uninited ? rank_n - pos.x : uninited,
+				 pos.y != uninited ? 'A' + pos.y : uninited };
 	}
 	bool stone_pos_valid(Pair pos)
 	{
-		if ((pos.x < 0 || pos.x >= rank_n) && pos.x != uninit_value) return false;
-		if ((pos.y < 0 || pos.y >= rank_n) && pos.y != uninit_value) return false;
+		if ((pos.x < 0 || pos.x >= rank_n) && pos.x != uninited) return false;
+		if ((pos.y < 0 || pos.y >= rank_n) && pos.y != uninited) return false;
 		// TODO check if is occupied
 		return true;
 	}
 	void echo_candidate(PIndex index)
 	{
 		auto [digit, alpha] = index;
-		string sdigit = digit != uninit_value ? to_string(digit) : "  ",
-			   salpha = alpha != uninit_value ? string(1, alpha) : " ";
+		string sdigit = digit != uninited ? to_string(digit) : "  ",
+			   salpha = alpha != uninited ? string(1, alpha) : " ";
 
 		Pair::print({ screen_size.x - 1, (int)str2.size() + 2 },
 			salpha + sdigit);
@@ -211,7 +211,7 @@ struct BoardPrinter
 
 	void stone_blink(Pair pos, bool isblack, bool flag)
 	{
-		if (!stone_pos_valid(pos) || pos.x == uninit_value || pos.y == uninit_value)
+		if (!stone_pos_valid(pos) || pos.x == uninited || pos.y == uninited)
 			return;
 		pos = pos * cell - Pair{ 0, 1 };
 		string s1 = flag ? string(ERASE) + " " : table_char(pos),
@@ -262,8 +262,8 @@ int main()
 	printer.print();
 
 	auto work = [&printer](auto board, auto isblack) -> Pair {
-		Pair pos{uninit_value, uninit_value};
-		PIndex index{uninit_value, uninit_value};
+		Pair pos{uninited, uninited};
+		PIndex index{uninited, uninited};
 		auto& [digit, alpha] = index;
 		while (true) {
 			Sleep(500);
@@ -277,8 +277,8 @@ int main()
 			if (wch == 0x1b && _getwch() == '[' &&
 				(wch = _getwch(), 'A' <= wch && wch <= 'D')) {
 				int i = wch - 'A';
-				if (pos.x == uninit_value && delta[i].x ||
-					pos.y == uninit_value && delta[i].y) continue;
+				if (pos.x == uninited && delta[i].x ||
+					pos.y == uninited && delta[i].y) continue;
 				Pair new_pos = pos + delta[i];
 				while (printer.stone_pos_valid(new_pos) && board[new_pos.x][new_pos.y])
 					new_pos += delta[i];
@@ -305,7 +305,7 @@ int main()
 			}
 			else if (wch == '\r') {
 				printer.index_blink(pos, false);
-				printer.echo_candidate({ uninit_value, uninit_value });
+				printer.echo_candidate({ uninited, uninited });
 				return pos;
 			}
 		}
