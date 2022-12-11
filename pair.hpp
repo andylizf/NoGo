@@ -10,50 +10,20 @@ using namespace std;
 struct Pair
 {
 	int x, y;
-	Pair() = default;
 	Pair(int x, int y) : x(x), y(y) {}
-	Pair(int x) : x(x), y(x) {}
+	Pair(int x) : Pair(x, x) {}
 
-	Pair& operator += (Pair p)
-	{
-		x += p.x, y += p.y;
-		return *this;
-	}
-	Pair operator + (Pair p) const
-	{
-		Pair res = *this;
-		return res += p;
-	}
-	Pair& operator -= (Pair p)
-	{
-		x -= p.x, y -= p.y;
-		return *this;
-	}
-	Pair operator - (Pair p) const
-	{
-		Pair res = *this;
-		return res -= p;
-	}
-	Pair& operator *= (Pair p)
-	{
-		x *= p.x, y *= p.y;
-		return *this;
-	}
-	Pair operator * (Pair p) const
-	{
-		Pair res = *this;
-		return res *= p;
-	}
-	Pair operator /= (Pair p)
-	{
-		x /= p.x, y /= p.y;
-		return *this;
-	}
-	Pair operator / (Pair p) const
-	{
-		Pair res = *this;
-		return res /= p;
-	}
+	//explicit operator bool() { return x != -1 && y != -1; }
+	Pair& operator += (Pair p) { x += p.x, y += p.y; return *this; }
+	Pair operator + (Pair p) const { Pair res = *this; return res += p; }
+	Pair& operator -= (Pair p) { x -= p.x, y -= p.y; return *this; }
+	Pair operator - (Pair p) const { Pair res = *this; return res -= p; }
+	Pair operator - () const { return Pair{ 0, 0 } - *this; }
+	Pair& operator *= (Pair p) { x *= p.x, y *= p.y;return *this; }
+	Pair operator * (Pair p) const { Pair res = *this; return res *= p; }
+	Pair operator /= (Pair p) { x /= p.x, y /= p.y; return *this; }
+	Pair operator / (Pair p) const { Pair res = *this;  return res /= p; }
+	auto operator <=> (const Pair& p) const = default;
 
 	static void go(Pair pos)
 	{

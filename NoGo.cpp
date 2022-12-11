@@ -16,6 +16,7 @@ using namespace std;
 
 #define COLOR CSI "38;5;231m"
 #define NEGATIVE CSI "0m" CSI "38;5;231;7m"
+
 #define BLINK CSI "5m"
 #define NOBLINK CSI "25m"
 
@@ -32,6 +33,8 @@ string repeat(const function<string(int)>&& genf, int times) {
 string repeat(string word, int times) {
 	return repeat([word](auto _) { return word; }, times);
 }
+
+constexpr int uninit_value = -2;
 
 using PIndex = pair<int, char>;
 
@@ -86,15 +89,6 @@ struct BoardPrinter
 	}
 
 	const string str2 = "Stone Position to Play on Board:";
-	void echo_candidate(PIndex index)
-	{
-		auto [digit, alpha] = index;
-		string sdigit = digit ? to_string(digit) : "  ",
-			salpha = alpha ? string(1, alpha) : " ";
-
-		Pair::print({ screen_size.x - 1, (int)str2.size() + 2 },
-			salpha + sdigit);
-	}
 
 	void print_panel()
 	{
@@ -122,26 +116,6 @@ struct BoardPrinter
 		p = table_corner + Pair{ 2, 2 };
 		for (int i = 0; i < board_size.x; i++)
 			Pair::println(p, i % cell.x == 0 ? to_string(rank_n - i / cell.x) : " ");
-	}
-	void index_blink(Pair pos)
-	{
-		auto [digit, alpha] = to_index(pos);
-		if (pos.x >= 0 && pos.x < rank_n)
-			Pair::print(table_corner + Pair{ 2, 2 } + Pair{ pos.x * cell.x, 0 },
-				COLOR, ERASE, BLINK, to_string(digit), NOBLINK);
-		if (pos.y >= 0 && pos.y < rank_n)
-			Pair::print(table_corner + Pair{ 1, 4 } + Pair{ 0, pos.y * cell.y },
-				COLOR, ERASE, BLINK, string(1, alpha), NOBLINK);
-	}
-	void no_index_blink(Pair pos)
-	{
-		auto [digit, alpha] = to_index(pos);
-		if (pos.x >= 0 && pos.x < rank_n)
-			Pair::print(table_corner + Pair{ 2, 2 } + Pair{ pos.x * cell.x, 0 },
-				COLOR, ERASE, to_string(digit));
-		if (pos.y >= 0 && pos.y < rank_n)
-			Pair::print(table_corner + Pair{ 1, 4 } + Pair{ 0, pos.y * cell.y },
-				COLOR, ERASE, string(1, alpha));
 	}
 
 	string table_char(Pair pos)
@@ -187,47 +161,79 @@ struct BoardPrinter
 	static inline char stonec[][3]{ "○", "●" };
 	//🔘⦾⦿○●⚪◦⬤
 
-	bool stone_pos_valid(Pair pos)
-	{
-		if (pos.x < 0 || pos.x >= rank_n || pos.y < 0 || pos.y >= rank_n) return false;
-		// TODO check if is occupied
-		return true;
-	}
-	void blink(Pair pos, bool isblack)
-	{
-		if (!stone_pos_valid(pos)) return;
-		pos = board_corner + pos * cell - Pair{ 0, 1 };
-		Pair::print(pos, COLOR, ERASE, " ", ERASE, BLINK, stonec[isblack], NOBLINK, ERASE, " ");
-	}
-	void no_blink(Pair pos)
-	{
-		if (!stone_pos_valid(pos)) return;
-		Pair board_pos = pos * cell - Pair{ 0, 1 };
-		Pair::print(board_corner + board_pos,
-			COLOR, table_char(board_pos), table_char(board_pos + Pair{ 0, 1 }), table_char(board_pos + Pair{ 0, 2 }));
-	} // TODO combine ** with no_**
-
 	Pair from_index(PIndex index)
 	{
 		auto [digit, alpha] = index;
-		return Pair{ digit ? rank_n - digit : -1,
-					 alpha ? index.second - 'A' : -1 };
+		return { digit != uninit_value ? rank_n - digit : uninit_value,
+				 alpha != uninit_value ? index.second - 'A' : uninit_value };
 	}
 	PIndex to_index(Pair pos)
 	{
-		return pair{ pos.x != -1 ? rank_n - pos.x : 0,
-					 pos.y != -1 ? 'A' + pos.y : 0 };
+		return { pos.x != uninit_value ? rank_n - pos.x : uninit_value,
+				 pos.y != uninit_value ? 'A' + pos.y : uninit_value };
+	}
+	bool stone_pos_valid(Pair pos)
+	{
+		if ((pos.x < 0 || pos.x >= rank_n) && pos.x != uninit_value) return false;
+		if ((pos.y < 0 || pos.y >= rank_n) && pos.y != uninit_value) return false;
+		// TODO check if is occupied
+		return true;
+	}
+	void echo_candidate(PIndex index)
+	{
+		auto [digit, alpha] = index;
+		string sdigit = digit != uninit_value ? to_string(digit) : "  ",
+			   salpha = alpha != uninit_value ? string(1, alpha) : " ";
+
+		Pair::print({ screen_size.x - 1, (int)str2.size() + 2 },
+			salpha + sdigit);
+	}
+
+	string blink_mode(string str) const
+	{
+		return string(BLINK) + str + string(NOBLINK);
+	}
+	void index_blink(Pair pos, bool flag)
+	{
+		auto [digit, alpha] = to_index(pos);
+		string sdigit = to_string(digit),
+			   salpha = string(1, alpha);
+		if (flag) sdigit = blink_mode(sdigit),
+				  salpha = blink_mode(salpha);
+
+		if (pos.x >= 0 && pos.x < rank_n)
+			Pair::print(table_corner + Pair{ 2, 2 } + Pair{ pos.x * cell.x, 0 },
+				COLOR, ERASE, sdigit);
+		if (pos.y >= 0 && pos.y < rank_n)
+			Pair::print(table_corner + Pair{ 1, 4 } + Pair{ 0, pos.y * cell.y },
+				COLOR, ERASE, salpha);
+	}
+
+	void stone_blink(Pair pos, bool isblack, bool flag)
+	{
+		if (!stone_pos_valid(pos) || pos.x == uninit_value || pos.y == uninit_value)
+			return;
+		pos = pos * cell - Pair{ 0, 1 };
+		string s1 = flag ? string(ERASE) + " " : table_char(pos),
+			s2 = flag ? string(ERASE) + blink_mode(stonec[isblack]) : table_char(pos + Pair{ 0, 1 }),
+			s3 = flag ? string(ERASE) + " " : table_char(pos + Pair{0, 2});
+		Pair::print(board_corner + pos, COLOR, s1, s2, s3);
+	}
+
+	Pair update_candidate(Pair pos, Pair newpos, bool isblack)
+	{
+		if (!stone_pos_valid(newpos)) return pos;
+		index_blink(pos, false);
+		stone_blink(pos, isblack, false);
+
+		echo_candidate(to_index(newpos));
+		index_blink(newpos, true);
+		stone_blink(newpos, isblack, true);
+		return newpos;
 	}
 	Pair update_candidate(Pair pos, PIndex nindex, bool isblack)
 	{
-		no_index_blink(pos);
-		no_blink(pos);
-
-		echo_candidate(nindex);
-		pos = from_index(nindex);
-		index_blink(pos);
-		blink(pos, isblack);
-		return pos;
+		return update_candidate(pos, from_index(nindex), isblack);
 	}
 };
 
@@ -252,12 +258,12 @@ int main()
 						 ScreenBufferInfo.srWindow.Right - ScreenBufferInfo.srWindow.Left + 1 };
 	// TODO X and Y meaning
 
-	BoardPrinter printer(9, screen_size);
+	BoardPrinter printer(10, screen_size);
 	printer.print();
 
 	auto work = [&printer](auto board, auto isblack) -> Pair {
-		Pair pos{ -1, -1 };
-		PIndex index;
+		Pair pos{uninit_value, uninit_value};
+		PIndex index{uninit_value, uninit_value};
 		auto& [digit, alpha] = index;
 		while (true) {
 			Sleep(500);
@@ -265,46 +271,45 @@ int main()
 
 			Pair delta[] = {
 				{-1, 0}, {+1, 0}, {0, +1}, {0, -1}
-			};/*
-			Pair npos = pos + delta[c];
-			if (printer.pos_valid(npos)) {
-				printer.no_blink(pos);
-				printer.blink(pos = npos, isblack);
-			}*/
-
-			if (wch == 27) {
+				//  Up, Down, Right, Left
+				//  ESC A, ESC B, ESC C, ESC D
+			};
+			if (wch == 0x1b && _getwch() == '[' &&
+				(wch = _getwch(), 'A' <= wch && wch <= 'D')) {
+				int i = wch - 'A';
+				if (pos.x == uninit_value && delta[i].x ||
+					pos.y == uninit_value && delta[i].y) continue;
+				Pair new_pos = pos + delta[i];
+				while (printer.stone_pos_valid(new_pos) && board[new_pos.x][new_pos.y])
+					new_pos += delta[i];
+				pos = printer.update_candidate(pos, new_pos, isblack);
+			}
+			else if (wch == 27) {
 				return { -1, -1 }; // TODO about self-killing, and normally exit the contest
 			}
-			else if (wch == '\b') {
+			else if (wch == 0x7f) {
 				if (digit) digit /= 10;
 				else alpha = 0;
 				pos = printer.update_candidate(pos, index, isblack);
 			}
 			else if (isdigit(wch)) {
-				int ndigit = 10 * digit + wch - '0';
-				if (ndigit <= printer.rank_n ||
-					(ndigit = wch - '0') <= printer.rank_n) {
-					digit = ndigit;
-					pos = printer.update_candidate(pos, index, isblack);
-				}
+				//digit = 10 * digit + wch - '0';
+				digit = wch - '0';
+				pos = printer.update_candidate(pos, index, isblack);
+				index = printer.to_index(pos);
 			}
 			else if (isalpha(wch)) {
-				wch = toupper(wch);
-				if (wch <= 'A' + printer.rank_n) {
-					alpha = wch;
-					pos = printer.update_candidate(pos, index, isblack);
-				}
+				alpha = toupper(wch);
+				pos = printer.update_candidate(pos, index, isblack);
+				index = printer.to_index(pos);
 			}
 			else if (wch == '\r') {
-				if (printer.stone_pos_valid(pos)) {
-					printer.no_index_blink(pos);
-					printer.echo_candidate({ 0, 0 });
-					return pos;
-				}
+				printer.index_blink(pos, false);
+				printer.echo_candidate({ uninit_value, uninit_value });
+				return pos;
 			}
 		}
 	};
-
 	Contest contest(printer.rank_n, work, bot_player);
 	while (contest.play()) {
 		printer.update_board(contest.board);

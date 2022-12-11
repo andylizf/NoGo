@@ -18,6 +18,9 @@
     <ClCompile Include="NoGo.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="botzone.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="game.hpp">

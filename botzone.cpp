@@ -1,5 +1,7 @@
 #include "game.hpp"
+#pragma once
 
+#undef botzone
 #ifdef botzone
 
 #include "json/json.h"

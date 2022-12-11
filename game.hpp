@@ -52,9 +52,9 @@ public:
 
 constexpr int cx[] = { -1,0,1,0 };
 constexpr int cy[] = { 0,-1,0,1 };
-bool inBorder(int x, int y) { return x >= 0 && y >= 0 && x < 9 && y < 9; }
-bool dfs_air_visit[9][9];
-bool dfs_air(Contest::BoardType board, int fx, int fy) //true: has air
+inline bool inBorder(int x, int y) { return x >= 0 && y >= 0 && x < 9 && y < 9; }
+inline bool dfs_air_visit[9][9];
+inline bool dfs_air(Contest::BoardType board, int fx, int fy) //true: has air
 {
 	dfs_air_visit[fx][fy] = true;
 	bool flag = false;
@@ -73,7 +73,7 @@ bool dfs_air(Contest::BoardType board, int fx, int fy) //true: has air
 	return flag;
 };
 //true: available
-bool judgeAvailable(Contest::BoardType board, int fx, int fy, int col)
+inline bool judgeAvailable(Contest::BoardType board, int fx, int fy, int col)
 {
 	if (board[fx][fy]) return false;
 	board[fx][fy] = col;
@@ -100,7 +100,7 @@ bool judgeAvailable(Contest::BoardType board, int fx, int fy, int col)
 	return true;
 };
 
-Pair bot_player(const Contest::BoardType& board, bool isblack) {
+inline Pair bot_player(const Contest::BoardType& board, bool isblack) {
 	vector<int> available_list;
 	int rank_n = (int)board.size();
 	for (int i = 0; i < rank_n; i++)
