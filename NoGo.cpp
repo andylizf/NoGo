@@ -14,8 +14,9 @@ using namespace std;
 #define ERASE CSI "X"
 #define FORWARD CSI "C"
 
-#define COLOR CSI "38;5;231m"
-#define NEGATIVE CSI "0m" CSI "38;5;231;7m"
+#define COLOR CSI "30;48;5;231m"
+#define NEGATIVE CSI "7m"
+#define NONEGATIVE CSI "27m"
 
 #define BLINK CSI "5m"
 #define NOBLINK CSI "25m"
@@ -80,31 +81,46 @@ struct BoardPrinter
 		copy(game_name.begin(), game_name.end(), output.begin());
 		copy(str.begin(), str.end(), output.begin() + i);
 
-		Pair::print({ 1, 1 }, NEGATIVE, output);
+		Pair::print({ 1, 1 }, COLOR, output);
 	}
 
 	const string str2 = "Stone Position to Play on Board:";
 
+	void print_empty_line(int line_num)
+	{
+		Pair::print({line_num, 1}, repeat(" ", screen_size.y));
+	}
+	string negative_mode(string str) const { return string(NEGATIVE) + str + string(NONEGATIVE); }
 	void print_panel()
 	{
 		string banner = "[ Welcome to NoGo.  For basic help, type Ctrl+G. ]";
-		Pair p{ screen_size.x - 2, (screen_size.y - (int)banner.size()) / 2 };
+		Pair p{ screen_size.x - 3, (screen_size.y - (int)banner.size()) / 2 };
 		Pair::print(p, banner);
 		
-		p = { screen_size.x - 1, 1 };
-		Pair::print(p, repeat(" ", screen_size.y));
+		p = { screen_size.x - 2, 1 };
+		print_empty_line(p.x);
 		Pair::print(p, str2);
 
-		string options[] = {
-			"^G Help", "^S Save", "^H Hint", "^Z Undo",
-			"^X Exit", "^O Load", "^R Replay", "^Y Redo"
+		array<string, 8> options {
+			"^G" + negative_mode(" Help"),
+			"^S" + negative_mode(" Save"), 
+			"^H" + negative_mode(" Hint"),
+			"^Z" + negative_mode(" Undo"),
+			"^X" + negative_mode(" Exit"),
+			"^O" + negative_mode(" Load"),
+			"^R" + negative_mode(" Replay"),
+			"^Y" + negative_mode(" Redo")
 		};
-		//for(Pair p = {})
-		/*
-		^G Help        ^S Save        ^H Hint        ^Z Undo
-		^X Exit        ^O Load        ^R Replay      ^Y Redo
-		*/
 
+		int column_width = screen_size.y / 4;
+
+		p = { screen_size.x - 1, 1 };
+		for (auto option : vector(options.begin(), options.begin() + 4))
+			Pair::print(p, option), p.y += column_width;
+
+		p = { screen_size.x, 1 };
+		for (auto option : vector(options.begin() + 4, options.begin() + 8))
+			Pair::print(p, option), p.y += column_width;
 	}
 
 	void draw_table()
@@ -171,13 +187,10 @@ struct BoardPrinter
 	}
 	void echo_candidate(Pos p)
 	{
-		Pos::print({ screen_size.x - 1, (int)str2.size() + 2 }, p);
+		Pos::print({ screen_size.x - 2, (int)str2.size() + 2 }, p);
 	}
 
-	string blink_mode(string str) const
-	{
-		return string(BLINK) + str + string(NOBLINK);
-	}
+	string blink_mode(string str) const { return string(BLINK) + str + string(NOBLINK); }
 	void index_blink(Pos p, bool flag)
 	{
 		string sdigit = string(1, p.get_digit()), salpha = string(1, p.get_alpha());
