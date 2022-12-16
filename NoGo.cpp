@@ -196,6 +196,7 @@ struct BoardPrinter
 	Pos update_candidate(Pos p, Pos newp, bool isblack)
 	{
 		if (!stone_p_valid(newp)) return p;
+
 		index_blink(p, false);
 		stone_blink(p, isblack, false);
 
@@ -246,7 +247,7 @@ int main()
 				int i = wch - 'A';
 				if (p.x == Pos::uninited && delta[i].x || p.y == Pos::uninited && delta[i].y) continue;
 				Pos newp = p + delta[i];
-				if(p.x != Pos::uninited && p.y != Pos::uninited)
+				if (p.x != Pos::uninited && p.y != Pos::uninited)
 					while (printer.stone_p_valid(newp) && board[newp])
 						newp += delta[i];
 				p = printer.update_candidate(p, newp, isblack);

@@ -15,16 +15,16 @@ namespace filesystem = std::filesystem;
 
 struct BoardType
 {
-	array<int, rank_n * rank_n> arr;
+	array<int, rank_n* rank_n> arr;
 	BoardType() { arr.fill(0); }
 	int& operator [] (Pos p) { return arr[p.x * rank_n + p.y]; }
 	int operator [] (Pos p) const { return arr[p.x * rank_n + p.y]; }
 
-	bool in_border(Pos p) const { return p.x >= 0 && p.y >= 0 && p.x < rank_n && p.y < rank_n; }
+	bool in_border(Pos p) const { return p.x >= 0 && p.y >= 0 && p.x < rank_n&& p.y < rank_n; }
 
 	static auto index()
 	{
-		array<Pos, rank_n * rank_n> res;
+		array<Pos, rank_n* rank_n> res;
 		for (int i = 0; i < rank_n; i++)
 			for (int j = 0; j < rank_n; j++)
 				res[i * rank_n + j] = { i, j };
