@@ -87,15 +87,24 @@ struct BoardPrinter
 
 	void print_panel()
 	{
-		string str = "[ Welcome to NoGo.  For basic help, type Ctrl+G. ]";
-		Pair p{ screen_size.x - 2, (screen_size.y - (int)str.size()) / 2 };
-		Pair::print(p, str);
+		string banner = "[ Welcome to NoGo.  For basic help, type Ctrl+G. ]";
+		Pair p{ screen_size.x - 2, (screen_size.y - (int)banner.size()) / 2 };
+		Pair::print(p, banner);
+		
 		p = { screen_size.x - 1, 1 };
+		Pair::print(p, repeat(" ", screen_size.y));
+		Pair::print(p, str2);
 
-		Pair::print(p, str2 + repeat(" ", screen_size.y - (int)str2.size()));
+		string options[] = {
+			"^G Help", "^S Save", "^H Hint", "^Z Undo",
+			"^X Exit", "^O Load", "^R Replay", "^Y Redo"
+		};
+		//for(Pair p = {})
+		/*
+		^G Help        ^S Save        ^H Hint        ^Z Undo
+		^X Exit        ^O Load        ^R Replay      ^Y Redo
+		*/
 
-
-		//TODO
 	}
 
 	void draw_table()

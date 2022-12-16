@@ -33,17 +33,10 @@ struct Pair
 		printf(CSI "%d;%dH", p.x, p.y);
 	}
 	template<typename... Ts>
-	static void print(Pair&& p, Ts ... args)
+	static void print(Pair p, Ts ... args)
 	{
 		go(p);
 		(cout << ... << args);
-	}
-	template<typename... Ts>
-	static void print(Pair& p, Ts ... args)
-	{
-		go(p);
-		(cout << ... << args);
-		p.y += ((int)string(args).size() + ...); // TODO: wrong adding length of vt sequence
 	}
 	template<typename... Ts>
 	static void println(Pair& p, Ts ... args)
