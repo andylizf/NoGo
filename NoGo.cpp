@@ -196,10 +196,13 @@ struct BoardPrinter {
     void update_board(const BoardType& board)
     {
         for (Pos p : board.index()) {
-            if (!board[p])
-                continue;
-            Pair::print(board_corner + p * cell - Pair { 0, 1 }, COLOR, ERASE, " ",
-                ERASE, stonec[board[p] == 1], ERASE, " ");
+            bool flag = board[p], isblack = board[p] == 1; // TODO
+            Pos p2 = p * cell - Pair { 0, 1 };
+            string s1 = flag ? string(ERASE) + " " : table_char(p2),
+                   s2 = flag ? string(ERASE) + stonec[isblack]
+                             : table_char(p2 + Pair { 0, 1 }),
+                   s3 = flag ? string(ERASE) + " " : table_char(p2 + Pair { 0, 2 });
+            Pos::print(board_corner + p2, COLOR, s1, s2, s3);
         } // TODO lazy update
     }
 
@@ -296,53 +299,71 @@ int main()
     BoardPrinter printer(screen_size);
     printer.print();
 
-    auto work = [&printer](auto board, auto isblack) -> Pos {
-        Pos p {};
-        while (true) {
-            Sleep(500);
-            auto wch = getwch_noblock();
+    Pos p {};
+    auto work = [&p](auto, auto) -> Pos { return p; };
 
-            Pos delta[] {
-                { -1, 0 }, { +1, 0 }, { 0, +1 }, { 0, -1 }
-                //  Up, Down, Right, Left
-                //  ESC A, ESC B, ESC C, ESC D
-            };
-            if (wch == 0x1b && _getwch() == '[' && (wch = _getwch(), 'A' <= wch && wch <= 'D')) {
-                int i { wch - 'A' };
-                if (p.x == Pos::uninited && delta[i].x || p.y == Pos::uninited && delta[i].y)
-                    continue;
-                Pos newp = p + delta[i];
-                if (p.x != Pos::uninited && p.y != Pos::uninited)
-                    while (printer.stone_p_valid(newp) && board[newp])
-                        newp += delta[i];
-                p = printer.update_candidate(p, newp, isblack);
-            } else if (wch == 27) {
-                exit(0);
-            } else if (wch == 0x7f) {
-                Pos newp = p;
-                if (p.y != Pos::uninited)
-                    newp.set_alpha(' ');
-                else
-                    newp.set_digit(' ');
-                p = printer.update_candidate(p, newp, isblack);
-            } else if (isdigit(wch)) {
-                Pos newp = p;
-                newp.set_digit(wch);
-                p = printer.update_candidate(p, newp, isblack);
-            } else if (isalpha(wch)) {
-                Pos newp = p;
-                newp.set_alpha(toupper(wch));
-                p = printer.update_candidate(p, newp, isblack);
-            } else if (wch == '\r') {
-                printer.index_blink(p, false);
-                printer.echo_candidate(Pos {});
-                return p;
-            }
-        }
-    };
     Contest contest(work, bot_player);
-    while (contest.play()) {
-        printer.update_board(contest.board);
+
+    BoardType& board = contest.board;
+    bool isblack = true;
+
+    while (true) {
+        Sleep(500);
+        auto wch = getwch_noblock();
+
+        Pos delta[] {
+            { -1, 0 }, { +1, 0 }, { 0, +1 }, { 0, -1 }
+            //  Up, Down, Right, Left
+            //  ESC A, ESC B, ESC C, ESC D
+        };
+        if (wch == 0x1b && _getwch() == '[' && (wch = _getwch(), 'A' <= wch && wch <= 'D')) {
+            int i { wch - 'A' };
+            if (p.x == Pos::uninited && delta[i].x || p.y == Pos::uninited && delta[i].y)
+                continue;
+            Pos newp = p + delta[i];
+            if (p.x != Pos::uninited && p.y != Pos::uninited)
+                while (printer.stone_p_valid(newp) && board[newp])
+                    newp += delta[i];
+            p = printer.update_candidate(p, newp, isblack);
+        } else if (wch == 0x7f) {
+            Pos newp = p;
+            if (p.y != Pos::uninited)
+                newp.set_alpha(' ');
+            else
+                newp.set_digit(' ');
+            p = printer.update_candidate(p, newp, isblack);
+        } else if (isdigit(wch)) {
+            Pos newp = p;
+            newp.set_digit(wch);
+            p = printer.update_candidate(p, newp, isblack);
+        } else if (isalpha(wch)) {
+            Pos newp = p;
+            newp.set_alpha(toupper(wch));
+            p = printer.update_candidate(p, newp, isblack);
+        } else if (wch == '\r') {
+            printer.index_blink(p, false);
+            contest.play(), contest.play();
+            printer.update_board(board);
+            printer.echo_candidate(p = Pos {});
+        } else if (wch == 24) { // exit
+            exit(0);
+        } else if (wch == 15) { // load
+
+        } else if (wch == 19) { // save
+
+        } else if (wch == 7) { // help
+
+        } else if (wch == 18) { // replay
+
+        } else if (wch == 8) { // hint
+
+        } else if (wch == 26) { // undo
+            if (contest.round() < 2)
+                continue;
+            auto newp = (contest.revoke(), contest.revoke());
+            printer.update_board(board);
+            p = printer.update_candidate(p, newp, isblack);
+        }
     }
 
     wchar_t wch = _getwch();

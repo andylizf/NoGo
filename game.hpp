@@ -88,6 +88,20 @@ public:
     3A
     */
 
+    Pos revoke()
+    {
+        if (!moves.size())
+            return {};
+        auto p = moves.back();
+        moves.pop_back();
+        board[p] = 0;
+        return p;
+    }
+    int round() const
+    {
+        return moves.size();
+    }
+
     void save(filesystem::path path)
     {
         ofstream writeFile(path, ios::out);
