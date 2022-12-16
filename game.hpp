@@ -53,9 +53,11 @@ struct BoardType
 	}
 
 	// judge whether stones around `p` is captured by `p`
+	// or `p` is captured by stones around `p`
 	bool is_capturing(Pos p) const
 	{
 		assert((*this)[p]);
+		if (!liberties(p)) return false;
 		for (auto d : delta)
 		{
 			Pos n = p + d;
