@@ -34,23 +34,18 @@ string repeat(string word, int times) {
 	return repeat([word](auto _) { return word; }, times);
 }
 
-constexpr int uninited = -2;
-
-using PIndex = pair<int, char>;
-
 struct BoardPrinter
 {
-	int rank_n;
-	Pair cell; // TODO diverse when rank_n >= 10, otherwise table_char will error.
+	Pair cell;
 	Pair screen_size;
 	Pair board_size, table_size;
 	Pair board_corner, table_corner;
 
-	BoardPrinter(int rank_n, Pair screen_size) : rank_n(rank_n), screen_size(screen_size),
-		cell(Pair{ 2, 4 }),
+	BoardPrinter(Pair screen_size) : screen_size(screen_size),
+		cell{ 2, 4 },
 		board_size(cell* (rank_n - 1) + 1),
 		board_corner((screen_size - board_size) / 2),
-		table_size(board_size + Pair{ 2 * 2,  4 * 2 }),
+		table_size(board_size + Pair{ 2, 4 } *2),
 		table_corner((screen_size - table_size) / 2) {}
 
 	void print()
@@ -118,25 +113,25 @@ struct BoardPrinter
 			Pair::println(p, i % cell.x == 0 ? to_string(rank_n - i / cell.x) : " ");
 	}
 
-	string table_char(Pair pos)
+	string table_char(Pair p)
 	{
-		if (pos.x < 0 || pos.x >= board_size.x || pos.y < 0 || pos.y >= board_size.y) return " ";
+		if (p.x < 0 || p.x >= board_size.x || p.y < 0 || p.y >= board_size.y) return " ";
 
-		if (pos.x == 0 && pos.y == 0) return "┏";
-		if (pos.x == 0 && pos.y == board_size.y - 1) return "┓";
-		if (pos.x == 0 && pos.y % cell.y == 0) return "┯";
-		if (pos.x == board_size.x - 1 && pos.y == 0) return "┗";
-		if (pos.x == board_size.x - 1 && pos.y == board_size.y - 1) return "┛";
-		if (pos.x == board_size.x - 1 && pos.y % cell.y == 0) return "┷";
-		if (pos.x == 0 || pos.x == board_size.x - 1) return "━";
+		if (p.x == 0 && p.y == 0) return "┏";
+		if (p.x == 0 && p.y == board_size.y - 1) return "┓";
+		if (p.x == 0 && p.y % cell.y == 0) return "┯";
+		if (p.x == board_size.x - 1 && p.y == 0) return "┗";
+		if (p.x == board_size.x - 1 && p.y == board_size.y - 1) return "┛";
+		if (p.x == board_size.x - 1 && p.y % cell.y == 0) return "┷";
+		if (p.x == 0 || p.x == board_size.x - 1) return "━";
 
-		if (pos.y == 0 && pos.x % cell.y == 0) return "┠";
-		if (pos.y == board_size.y - 1 && pos.x % cell.y == 0) return "┨";
-		if (pos.y == 0 || pos.y == board_size.y - 1) return "┃";
+		if (p.y == 0 && p.x % cell.y == 0) return "┠";
+		if (p.y == board_size.y - 1 && p.x % cell.y == 0) return "┨";
+		if (p.y == 0 || p.y == board_size.y - 1) return "┃";
 
-		if (pos.x % cell.x == 0 && pos.y % cell.y == 0) return "┼";
-		if (pos.x % cell.x == 0) return "─";
-		if (pos.y % cell.y == 0) return "│";
+		if (p.x % cell.x == 0 && p.y % cell.y == 0) return "┼";
+		if (p.x % cell.x == 0) return "─";
+		if (p.y % cell.y == 0) return "│";
 
 		return " ";
 	}
@@ -147,93 +142,67 @@ struct BoardPrinter
 		for (int i = 0; i < board_size.x; i++)
 			Pair::println(p, repeat([&](auto j) { return table_char({ i, j }); }, board_size.y));
 	}
-
-	void update_board(const Contest::BoardType& board) {
-		for (auto i = 0; i < rank_n; i++) {
-			for (auto j = 0; j < rank_n; j++) {
-				if (!board[i][j]) continue;
-				Pair::print(board_corner + Pair{ i, j } *cell - Pair{ 0, 1 },
-					COLOR, ERASE, " ", ERASE, stonec[board[i][j] == 1], ERASE, " ");
-			}
+	void update_board(const BoardType& board) {
+		for (Pos p : board.index()) {
+			if (!board[p]) continue;
+			Pair::print(board_corner + p * cell - Pair{ 0, 1 },
+				COLOR, ERASE, " ", ERASE, stonec[board[p] == 1], ERASE, " ");
 		} // TODO lazy update
 	}
 
 	static inline char stonec[][3]{ "○", "●" };
 	//🔘⦾⦿○●⚪◦⬤
 
-	Pair from_index(PIndex index)
+	bool stone_p_valid(Pos p)
 	{
-		auto [digit, alpha] = index;
-		return { digit != uninited ? rank_n - digit : uninited,
-				 alpha != uninited ? index.second - 'A' : uninited };
-	}
-	PIndex to_index(Pair pos)
-	{
-		return { pos.x != uninited ? rank_n - pos.x : uninited,
-				 pos.y != uninited ? 'A' + pos.y : uninited };
-	}
-	bool stone_pos_valid(Pair pos)
-	{
-		if ((pos.x < 0 || pos.x >= rank_n) && pos.x != uninited) return false;
-		if ((pos.y < 0 || pos.y >= rank_n) && pos.y != uninited) return false;
+		if ((p.x < 0 || p.x >= rank_n) && p.x != Pos::uninited) return false;
+		if ((p.y < 0 || p.y >= rank_n) && p.y != Pos::uninited) return false;
 		// TODO check if is occupied
 		return true;
 	}
-	void echo_candidate(PIndex index)
+	void echo_candidate(Pos p)
 	{
-		auto [digit, alpha] = index;
-		string sdigit = digit != uninited ? to_string(digit) : "  ",
-			   salpha = alpha != uninited ? string(1, alpha) : " ";
-
-		Pair::print({ screen_size.x - 1, (int)str2.size() + 2 },
-			salpha + sdigit);
+		Pos::print({ screen_size.x - 1, (int)str2.size() + 2 }, to_string(p));
 	}
 
 	string blink_mode(string str) const
 	{
 		return string(BLINK) + str + string(NOBLINK);
 	}
-	void index_blink(Pair pos, bool flag)
+	void index_blink(Pos p, bool flag)
 	{
-		auto [digit, alpha] = to_index(pos);
-		string sdigit = to_string(digit),
-			   salpha = string(1, alpha);
-		if (flag) sdigit = blink_mode(sdigit),
-				  salpha = blink_mode(salpha);
+		string sdigit = string(1, p.get_digit()), salpha = string(1, p.get_alpha());
+		if (flag) sdigit = blink_mode(sdigit), salpha = blink_mode(salpha);
 
-		if (pos.x >= 0 && pos.x < rank_n)
-			Pair::print(table_corner + Pair{ 2, 2 } + Pair{ pos.x * cell.x, 0 },
+		if (p.x >= 0 && p.x < rank_n)
+			Pos::print(table_corner + Pair{ 2, 2 } + Pair{ p.x * cell.x, 0 },
 				COLOR, ERASE, sdigit);
-		if (pos.y >= 0 && pos.y < rank_n)
-			Pair::print(table_corner + Pair{ 1, 4 } + Pair{ 0, pos.y * cell.y },
+		if (p.y >= 0 && p.y < rank_n)
+			Pos::print(table_corner + Pair{ 1, 4 } + Pair{ 0, p.y * cell.y },
 				COLOR, ERASE, salpha);
 	}
 
-	void stone_blink(Pair pos, bool isblack, bool flag)
+	void stone_blink(Pos p, bool isblack, bool flag)
 	{
-		if (!stone_pos_valid(pos) || pos.x == uninited || pos.y == uninited)
+		if (!stone_p_valid(p) || p.x == Pos::uninited || p.y == Pos::uninited)
 			return;
-		pos = pos * cell - Pair{ 0, 1 };
-		string s1 = flag ? string(ERASE) + " " : table_char(pos),
-			s2 = flag ? string(ERASE) + blink_mode(stonec[isblack]) : table_char(pos + Pair{ 0, 1 }),
-			s3 = flag ? string(ERASE) + " " : table_char(pos + Pair{0, 2});
-		Pair::print(board_corner + pos, COLOR, s1, s2, s3);
+		p = p * cell - Pair{ 0, 1 };
+		string s1 = flag ? string(ERASE) + " " : table_char(p),
+			s2 = flag ? string(ERASE) + blink_mode(stonec[isblack]) : table_char(p + Pair{ 0, 1 }),
+			s3 = flag ? string(ERASE) + " " : table_char(p + Pair{ 0, 2 });
+		Pos::print(board_corner + p, COLOR, s1, s2, s3);
 	}
 
-	Pair update_candidate(Pair pos, Pair newpos, bool isblack)
+	Pos update_candidate(Pos p, Pos newp, bool isblack)
 	{
-		if (!stone_pos_valid(newpos)) return pos;
-		index_blink(pos, false);
-		stone_blink(pos, isblack, false);
+		if (!stone_p_valid(newp)) return p;
+		index_blink(p, false);
+		stone_blink(p, isblack, false);
 
-		echo_candidate(to_index(newpos));
-		index_blink(newpos, true);
-		stone_blink(newpos, isblack, true);
-		return newpos;
-	}
-	Pair update_candidate(Pair pos, PIndex nindex, bool isblack)
-	{
-		return update_candidate(pos, from_index(nindex), isblack);
+		echo_candidate(newp);
+		index_blink(newp, true);
+		stone_blink(newp, isblack, true);
+		return newp;
 	}
 };
 
@@ -258,18 +227,16 @@ int main()
 						 ScreenBufferInfo.srWindow.Right - ScreenBufferInfo.srWindow.Left + 1 };
 	// TODO X and Y meaning
 
-	BoardPrinter printer(10, screen_size);
+	BoardPrinter printer(screen_size);
 	printer.print();
 
-	auto work = [&printer](auto board, auto isblack) -> Pair {
-		Pair pos{uninited, uninited};
-		PIndex index{uninited, uninited};
-		auto& [digit, alpha] = index;
+	auto work = [&printer](auto board, auto isblack) -> Pos {
+		Pos p{};
 		while (true) {
 			Sleep(500);
 			auto wch = getwch_noblock();
 
-			Pair delta[] = {
+			Pos delta[] = {
 				{-1, 0}, {+1, 0}, {0, +1}, {0, -1}
 				//  Up, Down, Right, Left
 				//  ESC A, ESC B, ESC C, ESC D
@@ -277,40 +244,40 @@ int main()
 			if (wch == 0x1b && _getwch() == '[' &&
 				(wch = _getwch(), 'A' <= wch && wch <= 'D')) {
 				int i = wch - 'A';
-				if (pos.x == uninited && delta[i].x ||
-					pos.y == uninited && delta[i].y) continue;
-				Pair new_pos = pos + delta[i];
-				while (printer.stone_pos_valid(new_pos) && board[new_pos.x][new_pos.y])
-					new_pos += delta[i];
-				pos = printer.update_candidate(pos, new_pos, isblack);
+				if (p.x == Pos::uninited && delta[i].x || p.y == Pos::uninited && delta[i].y) continue;
+				Pos newp = p + delta[i];
+				if(p.x != Pos::uninited && p.y != Pos::uninited)
+					while (printer.stone_p_valid(newp) && board[newp])
+						newp += delta[i];
+				p = printer.update_candidate(p, newp, isblack);
 			}
 			else if (wch == 27) {
-				return { -1, -1 }; // TODO about self-killing, and normally exit the contest
+				exit(0);
 			}
 			else if (wch == 0x7f) {
-				if (digit) digit /= 10;
-				else alpha = 0;
-				pos = printer.update_candidate(pos, index, isblack);
+				Pos newp = p;
+				if (p.y != Pos::uninited) newp.set_alpha(' ');
+				else newp.set_digit(' ');
+				p = printer.update_candidate(p, newp, isblack);
 			}
 			else if (isdigit(wch)) {
-				//digit = 10 * digit + wch - '0';
-				digit = wch - '0';
-				pos = printer.update_candidate(pos, index, isblack);
-				index = printer.to_index(pos);
+				Pos newp = p;
+				newp.set_digit(wch);
+				p = printer.update_candidate(p, newp, isblack);
 			}
 			else if (isalpha(wch)) {
-				alpha = toupper(wch);
-				pos = printer.update_candidate(pos, index, isblack);
-				index = printer.to_index(pos);
+				Pos newp = p;
+				newp.set_alpha(toupper(wch));
+				p = printer.update_candidate(p, newp, isblack);
 			}
 			else if (wch == '\r') {
-				printer.index_blink(pos, false);
-				printer.echo_candidate({ uninited, uninited });
-				return pos;
+				printer.index_blink(p, false);
+				printer.echo_candidate(Pos{});
+				return p;
 			}
 		}
 	};
-	Contest contest(printer.rank_n, work, bot_player);
+	Contest contest(work, bot_player);
 	while (contest.play()) {
 		printer.update_board(contest.board);
 	}

@@ -1,6 +1,9 @@
 #pragma once
 
+#include <array>
 #include <vector>
+#include <fstream>
+#include <iostream>
 #include <functional>
 #include <filesystem>
 
@@ -9,104 +12,118 @@
 using namespace std;
 namespace filesystem = std::filesystem;
 
+struct BoardType
+{
+	array<int, rank_n * rank_n> arr;
+	BoardType() { arr.fill(0); }
+	int& operator [] (Pos p) { return arr[p.x * rank_n + p.y]; }
+	int operator [] (Pos p) const { return arr[p.x * rank_n + p.y]; }
+
+	bool in_border(Pos p) const { return p.x >= 0 && p.y >= 0 && p.x < rank_n && p.y < rank_n; }
+
+	static auto index()
+	{
+		array<Pos, rank_n * rank_n> res;
+		for (int i = 0; i < rank_n; i++)
+			for (int j = 0; j < rank_n; j++)
+				res[i * rank_n + j] = { i, j };
+		return res;
+	}
+
+	static inline Pair delta[] = { Pair{-1, 0}, Pair{1, 0}, Pair{0, -1}, Pair{0, 1} };
+	bool _liberties(Pos p, BoardType& visit) const
+	{
+		visit[p] = true;
+		for (auto d : delta)
+		{
+			Pos n = p + d;
+			if (!in_border(n)) continue;
+			if (!(*this)[n]) return true;
+			if ((*this)[n] == (*this)[p] && !visit[n])
+				return _liberties(n, visit);
+		}
+		return false;
+	}
+
+	bool liberties(Pos p) const
+	{
+		BoardType visit{};
+		return _liberties(p, visit);
+	}
+
+	bool is_capturing(Pos p) const
+	{
+		for (auto d : delta)
+		{
+			Pos n = p + d;
+			if (in_border(n) && (*this)[n] != (*this)[p]
+				&& !liberties(n))
+				return true;
+		}
+		return false;
+	}
+};
+
 class Contest
 {
 public:
-	using BoardType = vector <vector<int>>;
-	using PlayerType = function <Pair(BoardType, bool)>;
-	int rank_n;
+	using PlayerType = function <Pos(BoardType, bool)>;
 	BoardType board;
+	vector<Pos> moves;
 	PlayerType player1, player2;
-	Contest(int rank_n, PlayerType&& player1, PlayerType&& player2) :
-		rank_n(rank_n), board(vector(rank_n, vector(rank_n, 0))), player1(player1), player2(player2) {}
+	Contest(PlayerType&& player1, PlayerType&& player2) : player1(player1), player2(player2) {}
+	/*
+	example.nogo only saves the situation
+	1A
+	2D
+	6E
+	3A
+	*/
+
 	void save(filesystem::path path)
 	{
-
+		ofstream writeFile(path, ios::out);
+		for (auto p : moves) writeFile << p << '\n';
+		writeFile.close();
 	}
 	void load(filesystem::path path)
 	{
-
+		ifstream readFile(path, ios::in);
+		while (readFile.good())
+		{
+			Pos p; readFile >> p;
+			moves.push_back(p);
+		}
+		readFile.close();
 	}
-	bool is_valid(Pair pos)
+
+	bool is_valid(Pos p)
 	{
-		if (board[pos.x][pos.y]) return false;
+		if (board[p]) return false;
 		// TODO
 		return true;
 	}
-	int move_n = 0;
+
 	bool play()
 	{
-		if (move_n % 2 == 0) {
-			auto pos = player1(board, true);
-			if (is_valid(pos)) board[pos.x][pos.y] = 1;
-			else throw "invalid stone position for player1";
-		}
-		else {
-			auto pos = player2(board, false);
-			if (is_valid(pos)) board[pos.x][pos.y] = -1;
-			else throw "invalid stone position for player2";
-		}
-		return ++move_n != rank_n * rank_n;
+		bool isblack = moves.size() % 2 == 0;
+		auto pos = (isblack ? player1 : player2)(board, isblack);
+		if (is_valid(pos)) board[pos] = isblack ? 1 : -1, moves.push_back(pos);
+		else throw string("invalid stone position for player") + (isblack ? "black" : "white");
+
+		return moves.size() != rank_n * rank_n;
 	}
 };
 
-constexpr int cx[] = { -1,0,1,0 };
-constexpr int cy[] = { 0,-1,0,1 };
-inline bool inBorder(int x, int y) { return x >= 0 && y >= 0 && x < 9 && y < 9; }
-inline bool dfs_air_visit[9][9];
-inline bool dfs_air(Contest::BoardType board, int fx, int fy) //true: has air
+inline Pos bot_player(const BoardType& _board, bool isblack)
 {
-	dfs_air_visit[fx][fy] = true;
-	bool flag = false;
-	for (int dir = 0; dir < 4; dir++)
-	{
-		int dx = fx + cx[dir], dy = fy + cy[dir];
-		if (inBorder(dx, dy))
-		{
-			if (board[dx][dy] == 0)
-				flag = true;
-			if (board[dx][dy] == board[fx][fy] && !dfs_air_visit[dx][dy])
-				if (dfs_air(board, dx, dy))
-					flag = true;
+	vector<Pos> solutions;
+	BoardType board = _board;
+	for (auto pos : board.index())
+		if (!board[pos]) {
+			board[pos] = isblack;
+			if (board.is_capturing(pos)) solutions.push_back(pos);
+			board[pos] = 0;
 		}
-	}
-	return flag;
-};
-//true: available
-inline bool judgeAvailable(Contest::BoardType board, int fx, int fy, int col)
-{
-	if (board[fx][fy]) return false;
-	board[fx][fy] = col;
-	memset(dfs_air_visit, 0, sizeof(dfs_air_visit));
-	if (!dfs_air(board, fx, fy))
-	{
-		board[fx][fy] = 0;
-		return false;
-	}
-	for (int dir = 0; dir < 4; dir++)
-	{
-		int dx = fx + cx[dir], dy = fy + cy[dir];
-		if (inBorder(dx, dy))
-		{
-			if (board[dx][dy] && !dfs_air_visit[dx][dy])
-				if (!dfs_air(board, dx, dy))
-				{
-					board[fx][fy] = 0;
-					return false;
-				}
-		}
-	}
-	board[fx][fy] = 0;
-	return true;
-};
-
-inline Pair bot_player(const Contest::BoardType& board, bool isblack) {
-	vector<int> available_list;
-	int rank_n = (int)board.size();
-	for (int i = 0; i < rank_n; i++)
-		for (int j = 0; j < rank_n; j++)
-			if (judgeAvailable(board, i, j, isblack))
-				available_list.push_back(i * rank_n + j);
-	int result = available_list[rand() % available_list.size()];
-	return { result / rank_n, result % rank_n };
+	return solutions[rand() % solutions.size()];
 };
