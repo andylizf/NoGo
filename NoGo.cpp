@@ -162,7 +162,7 @@ struct BoardPrinter
 	}
 	void echo_candidate(Pos p)
 	{
-		Pos::print({ screen_size.x - 1, (int)str2.size() + 2 }, to_string(p));
+		Pos::print({ screen_size.x - 1, (int)str2.size() + 2 }, p);
 	}
 
 	string blink_mode(string str) const

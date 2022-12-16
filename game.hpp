@@ -2,6 +2,7 @@
 
 #include <array>
 #include <vector>
+#include <cassert>
 #include <fstream>
 #include <iostream>
 #include <functional>
@@ -51,12 +52,14 @@ struct BoardType
 		return _liberties(p, visit);
 	}
 
+	// judge whether stones around `p` is captured by `p`
 	bool is_capturing(Pos p) const
 	{
+		assert((*this)[p]);
 		for (auto d : delta)
 		{
 			Pos n = p + d;
-			if (in_border(n) && (*this)[n] != (*this)[p]
+			if (in_border(n) && (*this)[n] == -(*this)[p]
 				&& !liberties(n))
 				return true;
 		}
@@ -121,8 +124,8 @@ inline Pos bot_player(const BoardType& _board, bool isblack)
 	BoardType board = _board;
 	for (auto pos : board.index())
 		if (!board[pos]) {
-			board[pos] = isblack;
-			if (board.is_capturing(pos)) solutions.push_back(pos);
+			board[pos] = isblack ? 1 : -1;
+			if (!board.is_capturing(pos)) solutions.push_back(pos);
 			board[pos] = 0;
 		}
 	return solutions[rand() % solutions.size()];
