@@ -112,11 +112,10 @@ public:
 	bool play()
 	{
 		bool isblack = moves.size() % 2 == 0;
-		auto p = (isblack ? player1 : player2)(board, isblack);
-		if (is_valid(p)) board[p] = isblack ? 1 : -1, moves.push_back(p);
+		auto pos = (isblack ? player1 : player2)(board, isblack);
+		if (is_valid(pos)) board[pos] = isblack ? 1 : -1, moves.push_back(pos);
 		else throw string("invalid stone position for player") + (isblack ? "black" : "white");
 
-		if (board.is_capturing(p)) return false;
 		return moves.size() != rank_n * rank_n;
 	}
 };

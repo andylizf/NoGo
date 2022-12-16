@@ -132,7 +132,6 @@
     <ClCompile Include="NoGo.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="bot.hpp" />
     <ClInclude Include="game.hpp" />
     <ClInclude Include="pair.hpp" />
   </ItemGroup>
