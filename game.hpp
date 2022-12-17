@@ -154,10 +154,9 @@ public:
     void load(fs::path path)
     {
         ifstream readFile(path, ios::in);
-        while (readFile.good()) {
-            Pos p;
-            readFile >> p;
-            current.moves.push_back(p);
+        Pos p {};
+        while (readFile.good() && readFile >> p) {
+            current.put(p);
         }
         readFile.close();
     }

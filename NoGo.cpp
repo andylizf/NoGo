@@ -120,12 +120,16 @@ struct BoardPrinter {
         print_empty_line_negative(p.x);
         Pair::print(p, str);
     }
+    void print_dialog_title(string title)
+    {
+        Pos p { screen_size.x - 2, 1 };
+        print_empty_line(p.x);
+        Pair::print(p, title);
+    }
     void print_panel()
     {
         print_banner("[ Welcome to NoGo.  For basic help, type Ctrl+G. ]");
-        Pair p = { screen_size.x - 2, 1 };
-        print_empty_line(p.x);
-        Pair::print(p, str2);
+        print_dialog_title(str2);
 
         array<string, 8> options {
             "^G" + negative_mode(" Help"), "^S" + negative_mode(" Save"),
@@ -136,7 +140,7 @@ struct BoardPrinter {
 
         column_width = screen_size.y / 4;
 
-        p = { screen_size.x - 1, 1 };
+        Pair p = { screen_size.x - 1, 1 };
         print_empty_line_negative(p.x);
         for (auto option : vector(options.begin(), options.begin() + 4))
             Pair::print(p, option), p.y += column_width;
@@ -152,18 +156,15 @@ struct BoardPrinter {
         Pair::print({ line_num, 1 }, repeat(negative_mode(" "), screen_size.y));
     }
 
-    void save_file(Contest& contest)
+    void print_dialog(string title, function<void()> yes, function<void()> no)
     {
-        string str3 = "Save modified situation? ";
-        Pos p { screen_size.x - 2, 1 };
-        print_empty_line(p.x);
-        Pair::print(p, str3);
+        print_dialog_title(title);
         array<string, 3> options {
             " Y" + negative_mode(" Yes"),
             " N" + negative_mode(" No"),
             "^C" + negative_mode(" Cancel")
         };
-        p.x++;
+        Pair p = { screen_size.x - 1, 1 };
         print_empty_line_negative(p.x);
         Pair::print(p, options[0]);
         p.x++;
@@ -173,20 +174,79 @@ struct BoardPrinter {
         Pair::print(p, options[2]);
         while (true) {
             Sleep(500);
-            auto wch = getch_noblock();
-            if (wch == -1) {
+            auto c = getch_noblock();
+            if (c == -1) {
                 continue;
-            } else if (toupper(wch) == 'Y') {
-                string file_name = "situation_" + current_time() + ".nogo";
-                contest.save(file_name);
-                exit(0);
-            } else if (toupper(wch) == 'N') {
-                exit(0);
-            } else if (wch == 3) { // CTRL + C
+            } else if (toupper(c) == 'Y') {
+                yes();
+            } else if (toupper(c) == 'N') {
+                no();
+            } else if (c == 3) { // CTRL + C
                 print_panel();
                 return;
+            } 
+        }
+    }
+
+    void refresh_input_buffer(Pair p)
+    {
+        Pair::print(p, repeat(" ", screen_size.y - p.y));
+    }
+
+    void print_input_dialog(string title, function<void(string)> enter)
+    {
+        print_dialog_title(title);
+        array<string, 2> options {
+            "^G" + negative_mode(" Help"),
+            "^C" + negative_mode(" Cancel")
+        };
+        Pair p = { screen_size.x - 1, 1 };
+        print_empty_line_negative(p.x);
+        Pair::print(p, options[0]);
+        p.x++;
+        print_empty_line_negative(p.x);
+        Pair::print(p, options[1]);
+
+        p =  { screen_size.x - 2, (int)title.size() + 2 };
+        string str {};
+        while (true) {
+            Sleep(500);
+            auto c = getch_noblock();
+            if (c == -1) {
+                continue;
+            } else if (isdigit(c) || isalpha(c)) {
+                str += c;
+                refresh_input_buffer(p);
+                Pair::print(p, str);
+            } else if (c == 0x7f) {
+                if (str.size())
+                    str.pop_back();
+                refresh_input_buffer(p);
+                Pair::print(p, str);
+            } else if (c == '\r') {
+                enter(str);
             }
         }
+    }
+
+    void save_file(Contest& contest)
+    {
+        print_dialog(
+            "Save modified situation? ", [&contest]() {
+            string file_name = "situation_" + current_time() + ".nogo";
+            contest.save(file_name);
+            exit(0); }, [] { exit(0); });
+    }
+
+    string str5 = "Situation File to Load: ";
+    void read_file(Contest& contest, BoardPrinter &printer)
+    {
+        print_input_dialog(str5, [&contest, &printer](auto filename) {
+            contest.current = State { true };
+            contest.load(filename + ".nogo");
+            printer.update_board(contest.current.board);
+            printer.print_panel();
+            });
     }
 
     void draw_table()
@@ -334,7 +394,7 @@ void crash(string error_message)
     exit(-1);
 }
 
-#ifndef bot_main
+#ifndef botzone
 
 int main()
 {
@@ -418,7 +478,7 @@ int main()
                 exit(0);
             printer.save_file(contest);
         } else if (c == 15) { // load
-
+            printer.read_file(contest, printer);
         } else if (c == 19) { // save
             string file_name = "situation_" + current_time() + ".nogo";
             contest.save(file_name);
@@ -437,7 +497,7 @@ int main()
         }
     }
 
-    wchar_t wch = _getwch();
+    wchar_t c = _getwch();
 
     // Exit the alternate buffer
     printf(CSI "?1049");
