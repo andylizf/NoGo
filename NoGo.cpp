@@ -24,9 +24,9 @@ namespace fs = std::filesystem;
 #define BLINK CSI "5m"
 #define NOBLINK CSI "25m"
 
-int getwch_noblock()
+int getch_noblock()
 {
-    return _kbhit() ? _getwch() : -1;
+    return _kbhit() ? _getch() : -1;
 }
 
 string repeat(const function<string(int)>&& genf, int times)
@@ -173,7 +173,7 @@ struct BoardPrinter {
         Pair::print(p, options[2]);
         while (true) {
             Sleep(500);
-            auto wch = getwch_noblock();
+            auto wch = getch_noblock();
             if (wch == -1) {
                 continue;
             } else if (toupper(wch) == 'Y') {
@@ -371,15 +371,15 @@ int main()
 
     while (true) {
         Sleep(500);
-        auto wch = getwch_noblock();
+        auto c = getch_noblock();
 
         Pos delta[] {
             { -1, 0 }, { +1, 0 }, { 0, +1 }, { 0, -1 }
             //  Up, Down, Right, Left
             //  ESC A, ESC B, ESC C, ESC D
         };
-        if (wch == 0x1b && _getwch() == '[' && (wch = _getwch(), 'A' <= wch && wch <= 'D')) {
-            int i { wch - 'A' };
+        if (c == 0x1b && _getwch() == '[' && (c = _getwch(), 'A' <= c && c <= 'D')) {
+            int i { c - 'A' };
             if (p.x == Pos::uninited && delta[i].x || p.y == Pos::uninited && delta[i].y)
                 continue;
             Pos newp = p + delta[i];
@@ -387,47 +387,48 @@ int main()
                 while (printer.stone_p_valid(newp) && board[newp])
                     newp += delta[i];
             p = printer.update_candidate(p, newp, isblack);
-        } else if (wch == 0x7f) {
+        } else if (c == 0x7f) {
             Pos newp = p;
             if (p.y != Pos::uninited)
                 newp.set_alpha(' ');
             else
                 newp.set_digit(' ');
             p = printer.update_candidate(p, newp, isblack);
-        } else if (isdigit(wch)) {
+        } else if (isdigit(c)) {
             Pos newp = p;
-            newp.set_digit(wch);
+            newp.set_digit(c);
             p = printer.update_candidate(p, newp, isblack);
-        } else if (isalpha(wch)) {
+        } else if (isalpha(c)) {
             Pos newp = p;
-            newp.set_alpha(toupper(wch));
+            newp.set_alpha(toupper(c));
             p = printer.update_candidate(p, newp, isblack);
-        } else if (wch == '\r') {
+        } else if (c == '\r') {
             printer.index_blink(p, false);
             if (!contest.play()) {
                 printer.print_banner(" Game ends. Player white wins! ");
                 // TODO
             }
-            if (!contest.play())
+            if (!contest.play()) {
                 printer.print_banner(" Game ends. Player black wins! ");
+            }
             printer.update_board(board);
             printer.echo_candidate(p = Pos {});
-        } else if (wch == 24) { // exit
+        } else if (c == 24) { // exit
             if (!contest.round())
                 exit(0);
             printer.save_file(contest);
-        } else if (wch == 15) { // load
+        } else if (c == 15) { // load
 
-        } else if (wch == 19) { // save
+        } else if (c == 19) { // save
             string file_name = "situation_" + current_time() + ".nogo";
             contest.save(file_name);
-        } else if (wch == 7) { // help
+        } else if (c == 7) { // help
 
-        } else if (wch == 18) { // replay
+        } else if (c == 18) { // replay
 
-        } else if (wch == 8) { // hint
+        } else if (c == 8) { // hint
 
-        } else if (wch == 26) { // undo
+        } else if (c == 26) { // undo
             if (contest.round() < 2)
                 continue;
             auto newp = (contest.current.revoke(), contest.current.revoke());
