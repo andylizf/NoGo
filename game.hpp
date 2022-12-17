@@ -102,7 +102,7 @@ public:
 
     bool is_over() const
     {
-        return board.is_capturing(moves.back()) || moves.size() == rank_n * rank_n;
+        return !available_actions().size();
     }
 
     vector<Pos> available_actions() const
