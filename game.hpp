@@ -11,7 +11,7 @@
 #include "pair.hpp"
 
 using namespace std;
-namespace filesystem = std::filesystem;
+namespace fs = std::filesystem;
 
 struct BoardType {
     array<int, rank_n * rank_n> arr;
@@ -102,14 +102,14 @@ public:
         return moves.size();
     }
 
-    void save(filesystem::path path)
+    void save(fs::path path)
     {
         ofstream writeFile(path, ios::out);
         for (auto p : moves)
             writeFile << p << '\n';
         writeFile.close();
     }
-    void load(filesystem::path path)
+    void load(fs::path path)
     {
         ifstream readFile(path, ios::in);
         while (readFile.good()) {

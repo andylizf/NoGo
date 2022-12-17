@@ -10,6 +10,7 @@
 #include "pair.hpp"
 
 using namespace std;
+namespace fs = std::filesystem;
 
 #define CSI "\x1b["
 #define ERASE CSI "X"
@@ -37,6 +38,16 @@ string repeat(const function<string(int)>&& genf, int times)
 string repeat(string word, int times)
 {
     return repeat([word](auto _) { return word; }, times);
+}
+
+string current_time()
+{
+    auto t = time(nullptr);
+    stringstream ss;
+    ss << put_time(localtime(&t), "%F_%T"); // ISO 8601 without timezone information.
+    auto s = ss.str();
+    replace(s.begin(), s.end(), ':', '-');
+    return s;
 }
 
 struct BoardPrinter {
@@ -131,17 +142,12 @@ struct BoardPrinter {
             Pair::print(p, option), p.y += column_width;
     }
 
-    void file_name()
-    {
-        string str4 = "File Name to Write: ";
-    }
-
     void print_empty_line_negative(int line_num)
     {
         Pair::print({ line_num, 1 }, repeat(negative_mode(" "), screen_size.y));
     }
 
-    void save_file()
+    void save_file(Contest& contest)
     {
         string str3 = "Save modified situation? ";
         Pos p { screen_size.x - 2, 1 };
@@ -165,9 +171,11 @@ struct BoardPrinter {
             auto wch = getwch_noblock();
             if (wch == -1) {
                 continue;
-            } else if (wch == 'Y') {
-                
-            } else if (wch == 'N') {
+            } else if (toupper(wch) == 'Y') {
+                string file_name = "situation_" + current_time() + ".nogo";
+                contest.save(file_name);
+                exit(0);
+            } else if (toupper(wch) == 'N') {
                 exit(0);
             } else if (wch == 3) { // CTRL + C
                 print_panel();
@@ -396,11 +404,12 @@ int main()
         } else if (wch == 24) { // exit
             if (!contest.round())
                 exit(0);
-            printer.save_file();
+            printer.save_file(contest);
         } else if (wch == 15) { // load
 
         } else if (wch == 19) { // save
-
+            string file_name = "situation_" + current_time() + ".nogo";
+            contest.save(file_name);
         } else if (wch == 7) { // help
 
         } else if (wch == 18) { // replay
