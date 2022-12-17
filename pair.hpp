@@ -2,7 +2,6 @@
 
 #include <cstdio>
 #include <iostream>
-#include <sstream>
 
 using namespace std;
 
@@ -110,7 +109,7 @@ struct Pos : public Pair {
         return *this;
     }
 
-    friend ostream& operator<<(ostream& out, Pos p) { return out << p.get_digit() << p.get_alpha(); }
+    friend ostream& operator<<(ostream& out, Pos p) { return out << to_string(p); }
     friend istream& operator>>(istream& in, Pos& p)
     {
         char digit, alpha;
@@ -118,5 +117,9 @@ struct Pos : public Pair {
         p.set_alpha(alpha).set_digit(digit);
         return in;
     }
-    friend string to_string(Pos p) { return (ostringstream() << p).str(); }
+    friend string to_string(Pos p)
+    {
+        return string(1, p.get_digit())
+            + string(1, p.get_alpha());
+    }
 };

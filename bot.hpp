@@ -50,18 +50,13 @@ struct MCTSNode {
     }
 };
 
-vector<int> vec;
-
 // select the node to expand
 MCTSNode* tree_policy(MCTSNode* node)
 {
-    vec.push_back(5);
     // if (!node->available_actions.size())
     //     node->available_actions = node->state.available_actions();
 
-    vec.push_back(6);
     while (!node->state.is_over() && node->children.size() == node->state.available_actions().size()) {
-        vec.push_back(7);
         node = node->best_child(0.1);
     }
 
