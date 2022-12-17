@@ -5,7 +5,6 @@
 #include <functional>
 #include <iostream>
 #include <string>
-#include <format>
 
 #include "bot.hpp"
 #include "game.hpp"
@@ -409,7 +408,8 @@ int main()
             auto is_lose = false;
             if (is_over)
                 is_lose = true;
-            else is_over = !contest.play();
+            else
+                is_over = !contest.play();
 
             if (is_over) {
                 printer.print_banner(format(" Game ends. Player {} wins! ", is_lose ? "white" : "black"));

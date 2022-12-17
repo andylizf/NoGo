@@ -166,7 +166,7 @@ public:
         bool isblack = round() % 2 == 0;
         auto p = (isblack ? player1 : player2)(current);
         current.put(p);
-        
+
         return !current.is_over();
     }
 };

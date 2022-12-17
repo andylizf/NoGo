@@ -56,8 +56,8 @@ vector<int> vec;
 MCTSNode* tree_policy(MCTSNode* node)
 {
     vec.push_back(5);
-    //if (!node->available_actions.size())
-    //    node->available_actions = node->state.available_actions();
+    // if (!node->available_actions.size())
+    //     node->available_actions = node->state.available_actions();
 
     vec.push_back(6);
     while (!node->state.is_over() && node->children.size() == node->state.available_actions().size()) {
