@@ -99,7 +99,7 @@ public:
     }
     int round() const
     {
-        return moves.size();
+        return (int)moves.size();
     }
 
     void save(fs::path path)
