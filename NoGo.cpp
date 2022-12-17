@@ -404,16 +404,12 @@ int main()
             p = printer.update_candidate(p, newp, isblack);
         } else if (wch == '\r') {
             printer.index_blink(p, false);
-            auto is_over = !contest.play();
-            auto is_lose = false;
-            if (is_over)
-                is_lose = true;
-            else
-                is_over = !contest.play();
-
-            if (is_over) {
-                printer.print_banner(format(" Game ends. Player {} wins! ", is_lose ? "white" : "black"));
+            if (!contest.play()) {
+                printer.print_banner(" Game ends. Player white wins! ");
+                // TODO
             }
+            if (!contest.play())
+                printer.print_banner(" Game ends. Player black wins! ");
             printer.update_board(board);
             printer.echo_candidate(p = Pos {});
         } else if (wch == 24) { // exit
