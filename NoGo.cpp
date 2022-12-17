@@ -5,10 +5,11 @@
 #include <functional>
 #include <iostream>
 #include <string>
+#include <format>
 
+#include "bot.hpp"
 #include "game.hpp"
 #include "pair.hpp"
-#include "bot.hpp"
 
 using namespace std;
 namespace fs = std::filesystem;
@@ -113,13 +114,17 @@ struct BoardPrinter {
         return string(NEGATIVE) + str + string(NONEGATIVE);
     }
     int column_width;
+
+    void print_banner(string str)
+    {
+        Pair p { screen_size.x - 3, (screen_size.y - (int)str.size()) / 2 };
+        print_empty_line_negative(p.x);
+        Pair::print(p, str);
+    }
     void print_panel()
     {
-        string banner = "[ Welcome to NoGo.  For basic help, type Ctrl+G. ]";
-        Pair p { screen_size.x - 3, (screen_size.y - (int)banner.size()) / 2 };
-        Pair::print(p, banner);
-
-        p = { screen_size.x - 2, 1 };
+        print_banner("[ Welcome to NoGo.  For basic help, type Ctrl+G. ]");
+        Pair p = { screen_size.x - 2, 1 };
         print_empty_line(p.x);
         Pair::print(p, str2);
 
@@ -195,8 +200,7 @@ struct BoardPrinter {
 
         p = table_corner + Pair { 1, 4 };
         Pair::print(p, repeat([&](auto i) {
-            return i % cell.y == 0 ? string(1, 'A' + i / cell.y)
-                                   : " ";
+            return i % cell.y == 0 ? string(1, 'A' + i / cell.y) : " ";
         },
                            board_size.y));
         p = table_corner + Pair { 2, 2 };
@@ -343,7 +347,7 @@ int main()
     if (!GetConsoleMode(hOut, &out_mode) || !GetConsoleMode(hIn, &in_mode))
         crash("Unable to enter VT processing mode. Quitting.");
     out_mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING,
-        in_mode |= ENABLE_VIRTUAL_TERMINAL_INPUT, in_mode &= ~ENABLE_PROCESSED_INPUT; 
+        in_mode |= ENABLE_VIRTUAL_TERMINAL_INPUT, in_mode &= ~ENABLE_PROCESSED_INPUT;
     if (!SetConsoleMode(hOut, out_mode) || !SetConsoleMode(hIn, in_mode))
         crash("Unable to enter VT processing mode. Quitting.");
 
@@ -361,7 +365,7 @@ int main()
     Pos p {};
     auto work = [&p](auto) -> Pos { return p; };
 
-    Contest contest(work, bot_player);
+    Contest contest(work, mcts_bot_player);
 
     BoardType& board = contest.current.board;
     bool isblack = true;
@@ -401,7 +405,15 @@ int main()
             p = printer.update_candidate(p, newp, isblack);
         } else if (wch == '\r') {
             printer.index_blink(p, false);
-            contest.play(), contest.play();
+            auto is_over = !contest.play();
+            auto is_lose = false;
+            if (is_over)
+                is_lose = true;
+            else is_over = !contest.play();
+
+            if (is_over) {
+                printer.print_banner(format(" Game ends. Player {} wins! ", is_lose ? "white" : "black"));
+            }
             printer.update_board(board);
             printer.echo_candidate(p = Pos {});
         } else if (wch == 24) { // exit
