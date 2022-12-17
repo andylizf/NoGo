@@ -100,6 +100,7 @@ struct BoardPrinter {
     {
         return string(NEGATIVE) + str + string(NONEGATIVE);
     }
+    int column_width;
     void print_panel()
     {
         string banner = "[ Welcome to NoGo.  For basic help, type Ctrl+G. ]";
@@ -117,15 +118,62 @@ struct BoardPrinter {
             "^R" + negative_mode(" Replay"), "^Y" + negative_mode(" Redo")
         };
 
-        int column_width = screen_size.y / 4;
+        column_width = screen_size.y / 4;
 
         p = { screen_size.x - 1, 1 };
+        print_empty_line_negative(p.x);
         for (auto option : vector(options.begin(), options.begin() + 4))
             Pair::print(p, option), p.y += column_width;
 
         p = { screen_size.x, 1 };
+        print_empty_line_negative(p.x);
         for (auto option : vector(options.begin() + 4, options.begin() + 8))
             Pair::print(p, option), p.y += column_width;
+    }
+
+    void file_name()
+    {
+        string str4 = "File Name to Write: ";
+    }
+
+    void print_empty_line_negative(int line_num)
+    {
+        Pair::print({ line_num, 1 }, repeat(negative_mode(" "), screen_size.y));
+    }
+
+    void save_file()
+    {
+        string str3 = "Save modified situation? ";
+        Pos p { screen_size.x - 2, 1 };
+        print_empty_line(p.x);
+        Pair::print(p, str3);
+        array<string, 3> options {
+            " Y" + negative_mode(" Yes"),
+            " N" + negative_mode(" No"),
+            "^C" + negative_mode(" Cancel")
+        };
+        p.x++;
+        print_empty_line_negative(p.x);
+        Pair::print(p, options[0]);
+        p.x++;
+        print_empty_line_negative(p.x);
+        Pair::print(p, options[1]);
+        p.y += column_width;
+        Pair::print(p, options[2]);
+        while (true) {
+            Sleep(500);
+            auto wch = getwch_noblock();
+            if (wch == -1) {
+                continue;
+            } else if (wch == 'Y') {
+                
+            } else if (wch == 'N') {
+                exit(0);
+            } else if (wch == 3) { // CTRL + C
+                print_panel();
+                return;
+            }
+        }
     }
 
     void draw_table()
@@ -284,7 +332,7 @@ int main()
     if (!GetConsoleMode(hOut, &out_mode) || !GetConsoleMode(hIn, &in_mode))
         crash("Unable to enter VT processing mode. Quitting.");
     out_mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING,
-        in_mode |= ENABLE_VIRTUAL_TERMINAL_INPUT;
+        in_mode |= ENABLE_VIRTUAL_TERMINAL_INPUT, in_mode &= ~ENABLE_PROCESSED_INPUT; 
     if (!SetConsoleMode(hOut, out_mode) || !SetConsoleMode(hIn, in_mode))
         crash("Unable to enter VT processing mode. Quitting.");
 
@@ -346,7 +394,9 @@ int main()
             printer.update_board(board);
             printer.echo_candidate(p = Pos {});
         } else if (wch == 24) { // exit
-            exit(0);
+            if (!contest.round())
+                exit(0);
+            printer.save_file();
         } else if (wch == 15) { // load
 
         } else if (wch == 19) { // save
