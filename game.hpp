@@ -40,8 +40,9 @@ struct BoardType {
                 continue;
             if (!(*this)[n])
                 return true;
-            if ((*this)[n] == (*this)[p] && !visit[n])
-                return _liberties(n, visit);
+            if ((*this)[n] == (*this)[p] && !visit[n]
+                && _liberties(n, visit))
+                return true;
         }
         return false;
     }
@@ -58,7 +59,7 @@ struct BoardType {
     {
         assert((*this)[p]);
         if (!liberties(p))
-            return false;
+            return true;
         for (auto d : delta) {
             Pos n = p + d;
             if (in_border(n) && (*this)[n] == -(*this)[p]
@@ -171,7 +172,7 @@ public:
     }
 };
 
-inline Pos bot_player(const State& state)
+inline Pos random_bot_player(const State& state)
 {
     auto actions = state.available_actions();
     return actions[rand() % actions.size()];
