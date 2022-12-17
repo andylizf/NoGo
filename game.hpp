@@ -69,11 +69,61 @@ struct BoardType {
     }
 };
 
-class Contest {
+class State {
 public:
-    using PlayerType = function<Pos(BoardType, bool)>;
     BoardType board;
     vector<Pos> moves;
+    bool isblack;
+
+    State(bool isblack)
+        : isblack(isblack)
+    {
+    }
+
+    void put(Pos p)
+    {
+        if (board[p])
+            throw string("invalid stone position for player") + (isblack ? "black" : "white");
+        board[p] = isblack ? 1 : -1;
+        moves.push_back(p);
+        isblack = !isblack;
+    }
+
+    Pos revoke()
+    {
+        if (!moves.size())
+            return {};
+        auto p = moves.back();
+        moves.pop_back();
+        board[p] = 0;
+        isblack = !isblack;
+        return p;
+    }
+
+    bool is_over() const
+    {
+        return board.is_capturing(moves.back()) || moves.size() == rank_n * rank_n;
+    }
+
+    vector<Pos> available_actions() const
+    {
+        vector<Pos> actions {};
+        auto temp_board { board };
+        for (auto pos : board.index())
+            if (!board[pos]) {
+                temp_board[pos] = isblack ? 1 : -1;
+                if (!temp_board.is_capturing(pos))
+                    actions.push_back(pos);
+                temp_board[pos] = 0;
+            }
+        return actions;
+    }
+};
+
+class Contest {
+public:
+    State current { true };
+    using PlayerType = function<Pos(State)>;
     PlayerType player1, player2;
     Contest(PlayerType&& player1, PlayerType&& player2)
         : player1(player1)
@@ -88,24 +138,15 @@ public:
     3A
     */
 
-    Pos revoke()
-    {
-        if (!moves.size())
-            return {};
-        auto p = moves.back();
-        moves.pop_back();
-        board[p] = 0;
-        return p;
-    }
     int round() const
     {
-        return (int)moves.size();
+        return (int)current.moves.size();
     }
 
     void save(fs::path path)
     {
         ofstream writeFile(path, ios::out);
-        for (auto p : moves)
+        for (auto p : current.moves)
             writeFile << p << '\n';
         writeFile.close();
     }
@@ -115,44 +156,23 @@ public:
         while (readFile.good()) {
             Pos p;
             readFile >> p;
-            moves.push_back(p);
+            current.moves.push_back(p);
         }
         readFile.close();
     }
 
-    bool is_valid(Pos p)
-    {
-        if (board[p])
-            return false;
-        // TODO
-        return true;
-    }
-
     bool play()
     {
-        bool isblack = moves.size() % 2 == 0;
-        auto p = (isblack ? player1 : player2)(board, isblack);
-        if (is_valid(p))
-            board[p] = isblack ? 1 : -1, moves.push_back(p);
-        else
-            throw string("invalid stone position for player") + (isblack ? "black" : "white");
-
-        if (board.is_capturing(p))
-            return false;
-        return moves.size() != rank_n * rank_n;
+        bool isblack = round() % 2 == 0;
+        auto p = (isblack ? player1 : player2)(current);
+        current.put(p);
+        
+        return !current.is_over();
     }
 };
 
-inline Pos bot_player(const BoardType& _board, bool isblack)
+inline Pos bot_player(const State& state)
 {
-    vector<Pos> solutions;
-    BoardType board = _board;
-    for (auto pos : board.index())
-        if (!board[pos]) {
-            board[pos] = isblack ? 1 : -1;
-            if (!board.is_capturing(pos))
-                solutions.push_back(pos);
-            board[pos] = 0;
-        }
-    return solutions[rand() % solutions.size()];
+    auto actions = state.available_actions();
+    return actions[rand() % actions.size()];
 };

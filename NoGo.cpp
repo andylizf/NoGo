@@ -8,6 +8,7 @@
 
 #include "game.hpp"
 #include "pair.hpp"
+#include "bot.hpp"
 
 using namespace std;
 namespace fs = std::filesystem;
@@ -330,6 +331,8 @@ void crash(string error_message)
     exit(-1);
 }
 
+#ifndef bot_main
+
 int main()
 {
     HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE),
@@ -356,11 +359,11 @@ int main()
     printer.print();
 
     Pos p {};
-    auto work = [&p](auto, auto) -> Pos { return p; };
+    auto work = [&p](auto) -> Pos { return p; };
 
     Contest contest(work, bot_player);
 
-    BoardType& board = contest.board;
+    BoardType& board = contest.current.board;
     bool isblack = true;
 
     while (true) {
@@ -419,7 +422,7 @@ int main()
         } else if (wch == 26) { // undo
             if (contest.round() < 2)
                 continue;
-            auto newp = (contest.revoke(), contest.revoke());
+            auto newp = (contest.current.revoke(), contest.current.revoke());
             printer.update_board(board);
             p = printer.update_candidate(p, newp, isblack);
         }
@@ -432,3 +435,5 @@ int main()
 }
 
 // TODO screen size change
+
+#endif
