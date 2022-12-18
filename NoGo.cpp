@@ -17,9 +17,9 @@ namespace fs = std::filesystem;
 #define ERASE CSI "X"
 #define FORWARD CSI "C"
 
-#define COLOR CSI "30;48;5;231m"
-#define NEGATIVE CSI "7m"
-#define NONEGATIVE CSI "27m"
+#define COLOR CSI "38;5;231;7m"
+#define NEGATIVE CSI "27m"
+#define NONEGATIVE CSI "7m"
 
 #define BLINK CSI "5m"
 #define NOBLINK CSI "25m"
