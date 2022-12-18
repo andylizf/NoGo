@@ -97,13 +97,13 @@ struct Pos : public Pair {
     }
 
     char get_digit() { return x != uninited ? rank_n - x + '0' : ' '; }
-    auto set_digit(char i)
+    Pos& set_digit(char i)
     {
         x = (i != ' ' ? rank_n - (i - '0') : uninited);
         return *this;
     }
     char get_alpha() { return y != uninited ? y + 'A' : ' '; }
-    auto set_alpha(char i)
+    Pos& set_alpha(char i)
     {
         y = (i != ' ' ? i - 'A' : uninited);
         return *this;
