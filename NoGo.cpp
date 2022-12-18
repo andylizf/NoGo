@@ -322,7 +322,7 @@ struct BoardPrinter {
                    s2 = flag ? string(ERASE) + stonec[isblack]
                              : table_char(p2 + Pair { 0, 1 }),
                    s3 = flag ? string(ERASE) + " " : table_char(p2 + Pair { 0, 2 });
-            Pos::print(board_corner + p2, COLOR, s1, s2, s3);
+            Pair::print(board_corner + p2, COLOR, s1, s2, s3);
         } // TODO lazy update
     }
 
@@ -340,7 +340,7 @@ struct BoardPrinter {
     }
     void echo_candidate(Pos p)
     {
-        Pos::print({ screen_size.x - 2, (int)str2.size() + 2 }, p);
+        Pair::print({ screen_size.x - 2, (int)str2.size() + 2 }, p);
     }
 
     string blink_mode(string str) const
@@ -354,10 +354,10 @@ struct BoardPrinter {
             sdigit = blink_mode(sdigit), salpha = blink_mode(salpha);
 
         if (p.x >= 0 && p.x < rank_n)
-            Pos::print(table_corner + Pair { 2, 2 } + Pair { p.x * cell.x, 0 }, COLOR,
+            Pair::print(table_corner + Pair { 2, 2 } + Pair { p.x * cell.x, 0 }, COLOR,
                 ERASE, sdigit);
         if (p.y >= 0 && p.y < rank_n)
-            Pos::print(table_corner + Pair { 1, 4 } + Pair { 0, p.y * cell.y }, COLOR,
+            Pair::print(table_corner + Pair { 1, 4 } + Pair { 0, p.y * cell.y }, COLOR,
                 ERASE, salpha);
     }
 
@@ -370,7 +370,7 @@ struct BoardPrinter {
                s2 = flag ? string(ERASE) + blink_mode(stonec[isblack])
                          : table_char(p + Pair { 0, 1 }),
                s3 = flag ? string(ERASE) + " " : table_char(p + Pair { 0, 2 });
-        Pos::print(board_corner + p, COLOR, s1, s2, s3);
+        Pair::print(board_corner + p, COLOR, s1, s2, s3);
     }
 
     Pos update_candidate(Pos p, Pos newp, bool isblack)
