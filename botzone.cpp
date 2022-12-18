@@ -1,8 +1,8 @@
+#ifdef botzone
+
 #include "game.hpp"
 
 #include "json/json.h"
-
-#ifdef botzone
 
 int main()
 {
