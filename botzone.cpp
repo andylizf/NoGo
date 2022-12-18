@@ -2,6 +2,8 @@
 
 #include "json/json.h"
 
+#ifdef botzone
+
 int main()
 {
     srand((unsigned)time(0));
@@ -33,3 +35,4 @@ int main()
 
     cout << Json::FastWriter().write(ret) << endl;
 }
+#endif
