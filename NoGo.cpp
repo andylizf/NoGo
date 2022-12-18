@@ -464,6 +464,7 @@ int main()
             p = printer.update_candidate(p, newp, isblack);
         } else if (c == '\r') {
             printer.index_blink(p, false);
+            printer.echo_candidate(p = Pos {});
             if (!contest.play()) {
                 printer.print_banner(" Game ends. Player white wins! ");
                 // TODO
@@ -472,7 +473,6 @@ int main()
                 printer.print_banner(" Game ends. Player black wins! ");
             }
             printer.update_board(board);
-            printer.echo_candidate(p = Pos {});
         } else if (c == 24) { // exit
             if (!contest.round())
                 exit(0);
