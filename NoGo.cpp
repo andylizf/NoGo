@@ -464,11 +464,11 @@ int main()
             p = printer.update_candidate(p, newp, isblack);
         } else if (c == '\r') {
             printer.index_blink(p, false);
-            printer.echo_candidate(p = Pos {});
             if (!contest.play()) {
                 printer.print_banner(" Game ends. Player white wins! ");
                 // TODO
             }
+            printer.echo_candidate(p = Pos {});
             if (!contest.play()) {
                 printer.print_banner(" Game ends. Player black wins! ");
             }
