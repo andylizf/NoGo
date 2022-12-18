@@ -487,7 +487,8 @@ int main()
         } else if (c == 18) { // replay
 
         } else if (c == 8) { // hint
-
+            Pair newp = mcts_bot_player(contest.current);
+            p = printer.update_candidate(p, newp, isblack);
         } else if (c == 26) { // undo
             if (contest.round() < 2)
                 continue;
