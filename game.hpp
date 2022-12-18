@@ -103,6 +103,8 @@ public:
 
     bool is_over() const
     {
+        if (!moves.size())
+            return !available_actions().size();
         return board.is_capturing(moves.back()) || !available_actions().size();
     }
 
