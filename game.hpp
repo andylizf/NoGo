@@ -81,17 +81,13 @@ public:
     {
     }
 
-    void put(Pos p)
+    State next_state(Pos p) const
     {
         if (board[p])
             throw string("invalid stone position for player") + (isblack ? "black" : "white");
-        board[p] = isblack ? 1 : -1;
-        moves.push_back(p);
-    }
-
-    State next_state() const
-    {
         State state = *this;
+        state.board[p] = isblack ? 1 : -1;
+        state.moves.push_back(p);
         state.isblack = !state.isblack;
         return state;
     }
@@ -109,10 +105,10 @@ public:
 
     int is_over() const
     {
-        if (moves.size() && board.is_capturing(moves.back())) // lose
-            return isblack ? -1 : 1;
-        if (!next_state().available_actions().size()) // win
+        if (moves.size() && board.is_capturing(moves.back())) // win
             return isblack ? 1 : -1;
+        if (!available_actions().size()) // lose
+            return isblack ? -1 : 1;
         return 0;
     }
     vector<Pos> available_actions() const
@@ -132,7 +128,7 @@ public:
 
 class Contest {
 public:
-    State current { false };
+    State current { true };
     using PlayerType = function<Pos(State)>;
     PlayerType player1, player2;
     Contest(PlayerType&& player1, PlayerType&& player2)
@@ -165,16 +161,15 @@ public:
         ifstream readFile(path, ios::in);
         Pos p {};
         while (readFile.good() && readFile >> p) {
-            current.put(p);
+            current.next_state(p);
         }
         readFile.close();
     }
 
     bool play()
     {
-        current = current.next_state();
         auto p = (current.isblack ? player1 : player2)(current);
-        current.put(p);
+        current = current.next_state(p);
 
         return !current.is_over();
     }
