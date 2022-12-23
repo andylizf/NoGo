@@ -79,7 +79,7 @@ struct BoardPrinter {
         printf(CSI "2J"); // Clear screen
 
         // Set scrolling margins to 3, h-2
-        printf(CSI "3;%dr", screen_size.y - 2);
+        printf(CSI "3;%dr", screen_size.y - 2); 
 
         printf(CSI "?25l"); // Hide the cursor
 
@@ -184,7 +184,7 @@ struct BoardPrinter {
             } else if (c == 3) { // CTRL + C
                 print_panel();
                 return;
-            } 
+            }
         }
     }
 
@@ -207,7 +207,7 @@ struct BoardPrinter {
         print_empty_line_negative(p.x);
         Pair::print(p, options[1]);
 
-        p =  { screen_size.x - 2, (int)title.size() + 2 };
+        p = { screen_size.x - 2, (int)title.size() + 2 };
         string str {};
         while (true) {
             Sleep(500);
@@ -239,14 +239,14 @@ struct BoardPrinter {
     }
 
     string str5 = "Situation File to Load: ";
-    void read_file(Contest& contest, BoardPrinter &printer)
+    void read_file(Contest& contest, BoardPrinter& printer)
     {
         print_input_dialog(str5, [&contest, &printer](auto filename) {
             contest.current = State { true };
             contest.load(filename + ".nogo");
             printer.update_board(contest.current.board);
             printer.print_panel();
-            });
+        });
     }
 
     void draw_table()
@@ -465,12 +465,12 @@ int main()
         } else if (c == '\r') {
             printer.index_blink(p, false);
             if (!contest.play()) {
-                printer.print_banner(" Game ends. Player white wins! ");
+                printer.print_banner(format(" Game ends. Player {} wins! ", contest.winner() == 1 ? "black" : "white"));
                 // TODO
             }
             printer.echo_candidate(p = Pos {});
             if (!contest.play()) {
-                printer.print_banner(" Game ends. Player black wins! ");
+                printer.print_banner(format(" Game ends. Player {} wins! ", contest.winner() == 1 ? "black" : "white"));
             }
             printer.update_board(board);
         } else if (c == 24) { // exit

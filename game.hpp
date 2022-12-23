@@ -87,7 +87,6 @@ public:
             throw string("invalid stone position for player") + (isblack ? "black" : "white");
         board[p] = isblack ? 1 : -1;
         moves.push_back(p);
-        isblack = !isblack;
     }
 
     Pos revoke()
@@ -101,13 +100,14 @@ public:
         return p;
     }
 
-    bool is_over() const
+    int is_over() const
     {
-        if (!moves.size())
-            return !available_actions().size();
-        return board.is_capturing(moves.back()) || !available_actions().size();
+        if (moves.size() && board.is_capturing(moves.back())) // lose
+            return isblack ? -1 : 1;
+        if (!available_actions().size()) // win
+            return isblack ? 1 : -1;
+        return 0;
     }
-
     vector<Pos> available_actions() const
     {
         vector<Pos> actions {};
@@ -125,7 +125,7 @@ public:
 
 class Contest {
 public:
-    State current { true };
+    State current { false };
     using PlayerType = function<Pos(State)>;
     PlayerType player1, player2;
     Contest(PlayerType&& player1, PlayerType&& player2)
@@ -165,16 +165,14 @@ public:
 
     bool play()
     {
-        bool isblack = round() % 2 == 0;
-        auto p = (isblack ? player1 : player2)(current);
+        current.isblack = !current.isblack;
+        auto p = (current.isblack ? player1 : player2)(current);
         current.put(p);
 
         return !current.is_over();
     }
-};
-
-inline Pos random_bot_player(const State& state)
-{
-    auto actions = state.available_actions();
-    return actions[rand() % actions.size()];
+    int winner() const
+    {
+        return current.is_over();
+    }
 };
