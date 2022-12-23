@@ -65,6 +65,7 @@ MCTSNode* tree_policy(MCTSNode* node)
         auto move = moves[node->children.size()];
         State state = node->state;
         state.put(move);
+        state.isblack = !state.isblack;
         node = node->addChild(state);
     }
     return node;
@@ -82,6 +83,7 @@ double default_policy(MCTSNode* node)
         auto moves = state.available_actions();
         int index = dist(rng) * moves.size();
         state.put(moves[index]);
+        state.isblack = !state.isblack;
     }
     return isblack == state.isblack;
 }
