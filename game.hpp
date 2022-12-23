@@ -89,6 +89,13 @@ public:
         moves.push_back(p);
     }
 
+    State next_state() const
+    {
+        State state = *this;
+        state.isblack = !state.isblack;
+        return state;
+    }
+
     Pos revoke()
     {
         if (!moves.size())
@@ -104,7 +111,7 @@ public:
     {
         if (moves.size() && board.is_capturing(moves.back())) // lose
             return isblack ? -1 : 1;
-        if (!available_actions().size()) // win
+        if (!next_state().available_actions().size()) // win
             return isblack ? 1 : -1;
         return 0;
     }
@@ -165,7 +172,7 @@ public:
 
     bool play()
     {
-        current.isblack = !current.isblack;
+        current = current.next_state();
         auto p = (current.isblack ? player1 : player2)(current);
         current.put(p);
 

@@ -56,7 +56,7 @@ MCTSNode* tree_policy(MCTSNode* node)
     // if (!node->available_actions.size())
     //     node->available_actions = node->state.available_actions();
 
-    while (!node->state.is_over() && node->children.size() == node->state.available_actions().size()) {
+    while (!node->state.is_over() && node->children.size() == node->state.next_state().available_actions().size()) {
         node = node->best_child(0.1);
     }
 
@@ -64,6 +64,10 @@ MCTSNode* tree_policy(MCTSNode* node)
         auto moves = node->state.available_actions();
         auto move = moves[node->children.size()];
         State state = node->state;
+    if (!state.is_over()) {
+        state = state.next_state();
+        auto moves = state.available_actions();
+        auto move = moves[node->children.size()];
         state.put(move);
         state.isblack = !state.isblack;
         node = node->addChild(state);
@@ -80,12 +84,13 @@ double default_policy(MCTSNode* node)
     State state = node->state;
     bool isblack = state.isblack;
     while (!state.is_over()) {
+        state = state.next_state();
         auto moves = state.available_actions();
         int index = dist(rng) * moves.size();
         state.put(moves[index]);
         state.isblack = !state.isblack;
     }
-    return isblack == state.isblack;
+    return state.is_over() == (isblack ? 1 : -1);
 }
 
 // backpropagate the result of the simulation
