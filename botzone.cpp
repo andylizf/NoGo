@@ -1,6 +1,6 @@
 #ifdef botzone
 
-#include "game.hpp"
+#include "bot.hpp"
 
 #include "json/json.h"
 
@@ -19,14 +19,14 @@ int main()
     bool isblack = get("requests", 0U) == Pos { -1, -1 };
     State state { isblack };
     if (!isblack)
-        state.put(get("requests", 0U));
+        state = state.next_state(get("requests", 0U));
 
     for (auto i = 0; i != input["responses"].size(); i++) {
-        state.put(get("responses", i));
-        state.put(get("requests", i + 1));
+        state = state.next_state(get("responses", i));
+        state = state.next_state(get("requests", i + 1));
     }
 
-    Pair result = random_bot_player(state);
+    Pair result = mcts_bot_player(state);
 
     Json::Value action;
     action["x"] = result.x, action["y"] = result.y;
