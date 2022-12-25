@@ -115,13 +115,14 @@ public:
     {
         vector<Pos> actions {};
         auto temp_board { board };
-        for (auto pos : board.index())
-            if (!board[pos]) {
-                temp_board[pos] = isblack ? 1 : -1;
-                if (!temp_board.is_capturing(pos))
-                    actions.push_back(pos);
-                temp_board[pos] = 0;
-            }
+        for (auto pos : board.index()) {
+            if (board[pos])
+                continue;
+            temp_board[pos] = isblack ? 1 : -1;
+            if (!temp_board.is_capturing(pos))
+                actions.push_back(pos);
+            temp_board[pos] = 0;
+        }
         return actions;
     }
 };
@@ -131,6 +132,7 @@ public:
     State current { true };
     using PlayerType = function<Pos(State)>;
     PlayerType player1, player2;
+    int winner { 0 };
     Contest(PlayerType&& player1, PlayerType&& player2)
         : player1(player1)
         , player2(player2)
@@ -168,13 +170,15 @@ public:
 
     bool play()
     {
-        auto p = (current.isblack ? player1 : player2)(current);
-        current = current.next_state(p);
-
-        return !current.is_over();
-    }
-    int winner() const
-    {
-        return current.is_over();
+        auto player = current.isblack ? player1 : player2;
+        auto res = with_timeout(10000ms, player, current);
+        if (!res) {
+            winner = -current.isblack;
+            cout << "timeout" << endl;
+            return false;
+        }
+        current = current.next_state(*res);
+        winner = current.is_over();
+        return !winner;
     }
 };
