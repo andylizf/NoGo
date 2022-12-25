@@ -2,8 +2,12 @@
 #include <iostream>
 #include <random>
 #include <vector>
+#include <chrono>
 
 #include "game.hpp"
+
+using namespace std;
+using namespace std::chrono;
 
 // struct to represent a node in the Monte Carlo Tree
 struct MCTSNode {
@@ -27,7 +31,7 @@ struct MCTSNode {
         }
     }
 
-    MCTSNode* addChild(const State& state)
+    MCTSNode* add_child(const State& state)
     {
         MCTSNode* child = new MCTSNode(state, this);
         children.push_back(child);
@@ -51,29 +55,29 @@ struct MCTSNode {
 };
 
 // select the node to expand
-MCTSNode* tree_policy(MCTSNode* node)
+inline MCTSNode* tree_policy(MCTSNode* node, double C)
 {
     // if (!node->available_actions.size())
     //     node->available_actions = node->state.available_actions();
 
     while (!node->state.is_over() && node->children.size() == node->state.available_actions().size()) {
-        node = node->best_child(0.1);
+        node = node->best_child(C);
     }
 
-        State state = node->state;
+    State state = node->state;
     if (!state.is_over()) {
         auto moves = state.available_actions();
         auto move = moves[node->children.size()];
-        node = node->addChild(state.next_state(move));
+        node = node->add_child(state.next_state(move));
     }
     return node;
 }
 
-std::mt19937 rng(std::random_device {}());
-std::uniform_real_distribution<double> dist(0, 1);
+inline std::mt19937 rng(std::random_device {}());
+inline std::uniform_real_distribution<double> dist(0, 1);
 
 // simulate the game from the expanded node
-double default_policy(MCTSNode* node)
+inline double default_policy(MCTSNode* node)
 {
     State state = node->state;
     bool isblack = state.isblack;
@@ -82,11 +86,21 @@ double default_policy(MCTSNode* node)
         int index = dist(rng) * moves.size();
         state = state.next_state(moves[index]);
     }
-    return state.is_over() == (isblack ? 1 : -1);
+    return state.is_over() != (isblack ? 1 : -1);
+}
+
+inline double default_policy2(MCTSNode* node)
+{
+    auto state = node->state;
+    int n3 = state.available_actions().size();
+    state.isblack = !state.isblack;
+    int n4 = state.available_actions().size();
+    state.isblack = !state.isblack;
+    return n4 - n3;
 }
 
 // backpropagate the result of the simulation
-void backup(MCTSNode* node, double reward)
+inline void backup(MCTSNode* node, double reward)
 {
     while (node) {
         node->visit++;
@@ -96,20 +110,24 @@ void backup(MCTSNode* node, double reward)
     }
 }
 
-// function to perform the Monte Carlo Tree Search
-MCTSNode* MCTS(MCTSNode* root, int maxIterations)
+inline Pos random_bot_player(const State& state)
 {
-    for (int i = 0; i < maxIterations; i++) {
-        MCTSNode* expand_node = tree_policy(root);
-        double reward = default_policy(expand_node);
-        backup(expand_node, reward);
-    }
-    return root->best_child(0);
+    auto actions = state.available_actions();
+    return actions[rand() % actions.size()];
 }
 
-inline Pos mcts_bot_player(const State& state)
+inline auto mcts_bot_player_generator(double C)
 {
-    MCTSNode* root = new MCTSNode(state);
-    MCTSNode* bestNode = MCTS(root, 1000);
-    return bestNode->state.moves.back();
-};
+    return [=](const State& state) {
+        auto start = high_resolution_clock::now();
+        MCTSNode* root = new MCTSNode(state);
+        while (high_resolution_clock::now() - start < 990ms) {
+            MCTSNode* expand_node = tree_policy(root, C);
+            double reward = default_policy2(expand_node);
+            backup(expand_node, reward);
+        }
+        return root->best_child(0)->state.moves.back();
+    };
+}
+
+inline auto mcts_bot_player = mcts_bot_player_generator(0.1);

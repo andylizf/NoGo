@@ -171,7 +171,7 @@ public:
     bool play()
     {
         auto player = current.isblack ? player1 : player2;
-        auto res = with_timeout(10000ms, player, current);
+        auto res = with_timeout(1000ms, player, current);
         if (!res) {
             winner = -current.isblack;
             cout << "timeout" << endl;
