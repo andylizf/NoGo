@@ -242,7 +242,7 @@ struct BoardPrinter {
     void read_file(Contest& contest, BoardPrinter& printer)
     {
         print_input_dialog(str5, [&contest, &printer](auto filename) {
-            contest.current = State { true };
+            contest.current = {};
             contest.load(filename + ".nogo");
             printer.update_board(contest.current.board);
             printer.print_panel();
@@ -465,7 +465,7 @@ int main()
         } else if (c == '\r') {
             printer.index_blink(p, false);
             if (!contest.play()) {
-                printer.print_banner(format(" Game ends. Player {} wins! ", contest.winner() == 1 ? "black" : "white"));
+                printer.print_banner(format(" Game ends. Player {} wins! ", contest.winner == 1 ? "black" : "white"));
                 // TODO
             }
             printer.echo_candidate(p = Pos {});

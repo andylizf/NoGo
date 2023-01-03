@@ -80,22 +80,21 @@ inline std::uniform_real_distribution<double> dist(0, 1);
 inline double default_policy(MCTSNode* node)
 {
     State state = node->state;
-    bool isblack = state.isblack;
     while (!state.is_over()) {
         auto moves = state.available_actions();
-        int index = dist(rng) * moves.size();
+        int index = (int)moves.size() * dist(rng);
         state = state.next_state(moves[index]);
     }
-    return state.is_over() != (isblack ? 1 : -1);
+    return state.is_over() == -node->state.role;
 }
 
 inline double default_policy2(MCTSNode* node)
 {
     auto state = node->state;
     int n3 = state.available_actions().size();
-    state.isblack = !state.isblack;
+    state.role.reverse();
     int n4 = state.available_actions().size();
-    state.isblack = !state.isblack;
+    state.role.reverse();
     return n4 - n3;
 }
 

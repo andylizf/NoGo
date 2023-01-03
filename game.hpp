@@ -15,7 +15,6 @@ namespace fs = std::filesystem;
 
 struct BoardType {
     array<int, rank_n * rank_n> arr;
-    BoardType() { arr.fill(0); }
     int& operator[](Pos p) { return arr[p.x * rank_n + p.y]; }
     int operator[](Pos p) const { return arr[p.x * rank_n + p.y]; }
 
@@ -70,25 +69,46 @@ struct BoardType {
     }
 };
 
-class State {
-public:
-    BoardType board;
-    vector<Pos> moves;
-    bool isblack;
-
-    State(bool isblack)
-        : isblack(isblack)
+struct RoleType {
+    enum Value {
+        WHITE = -1,
+        BLACK = 1
+    };
+    constexpr RoleType(Value value)
+        : value(value)
     {
     }
+    constexpr operator int() const
+    {
+        return value;
+    }
+    constexpr explicit operator bool() const
+    {
+        return value == BLACK;
+    }
+    constexpr void reverse()
+    {
+        *this = *this ? WHITE : BLACK;
+    }
+
+private:
+    Value value;
+};
+
+class State {
+public:
+    BoardType board {};
+    vector<Pos> moves {};
+    RoleType role { RoleType::BLACK };
 
     State next_state(Pos p) const
     {
         if (board[p])
-            throw string("invalid stone position for player") + (isblack ? "black" : "white");
-        State state = *this;
-        state.board[p] = isblack ? 1 : -1;
+            throw string("invalid stone position for role") + (role ? "black" : "white");
+        auto state = *this;
+        state.board[p] = role;
         state.moves.push_back(p);
-        state.isblack = !state.isblack;
+        state.role.reverse();
         return state;
     }
 
@@ -99,16 +119,16 @@ public:
         auto p = moves.back();
         moves.pop_back();
         board[p] = 0;
-        isblack = !isblack;
+        role.reverse();
         return p;
     }
 
     int is_over() const
     {
         if (moves.size() && board.is_capturing(moves.back())) // win
-            return isblack ? 1 : -1;
+            return role;
         if (!available_actions().size()) // lose
-            return isblack ? -1 : 1;
+            return -role;
         return 0;
     }
     vector<Pos> available_actions() const
@@ -118,7 +138,7 @@ public:
         for (auto pos : board.index()) {
             if (board[pos])
                 continue;
-            temp_board[pos] = isblack ? 1 : -1;
+            temp_board[pos] = role;
             if (!temp_board.is_capturing(pos))
                 actions.push_back(pos);
             temp_board[pos] = 0;
@@ -129,7 +149,7 @@ public:
 
 class Contest {
 public:
-    State current { true };
+    State current {};
     using PlayerType = function<Pos(State)>;
     PlayerType player1, player2;
     int winner { 0 };
@@ -170,10 +190,10 @@ public:
 
     bool play()
     {
-        auto player = current.isblack ? player1 : player2;
+        auto&& player = current.role ? player1 : player2;
         auto res = with_timeout(1000ms, player, current);
         if (!res) {
-            winner = -current.isblack;
+            winner = -current.role;
             cout << "timeout" << endl;
             return false;
         }
