@@ -1,9 +1,8 @@
-#ifdef botzone
-
 #include "bot.hpp"
 
 #include "json/json.h"
 
+#ifdef BOTZONE
 int main()
 {
     srand((unsigned)time(0));

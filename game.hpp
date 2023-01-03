@@ -6,12 +6,14 @@
 #include <fstream>
 #include <functional>
 #include <iostream>
+#include <ranges>
 #include <vector>
 
 #include "pair.hpp"
 
 using namespace std;
 namespace fs = std::filesystem;
+namespace ranges = std::ranges;
 
 struct BoardType {
     array<int, rank_n * rank_n> arr;
@@ -23,49 +25,40 @@ struct BoardType {
     static auto index()
     {
         array<Pos, rank_n * rank_n> res;
-        for (int i = 0; i < rank_n; i++)
-            for (int j = 0; j < rank_n; j++)
+        for (auto i : views::iota(0, rank_n))
+            for (auto j : views::iota(0, rank_n))
                 res[i * rank_n + j] = { i, j };
         return res;
     }
 
     static inline Pair delta[] = { Pair { -1, 0 }, Pair { 1, 0 }, Pair { 0, -1 }, Pair { 0, 1 } };
-    bool _liberties(Pos p, BoardType& visit) const
-    {
-        visit[p] = true;
-        for (auto d : delta) {
-            Pos n = p + d;
-            if (!in_border(n))
-                continue;
-            if (!(*this)[n])
-                return true;
-            if ((*this)[n] == (*this)[p] && !visit[n]
-                && _liberties(n, visit))
-                return true;
-        }
-        return false;
-    }
 
-    bool liberties(Pos p) const
+    bool liberties(this BoardType const& self, Pos p)
     {
         BoardType visit {};
-        return _liberties(p, visit);
+        auto _liberties = [self, &visit](this auto&& fself, Pos p) -> bool {
+            visit[p] = true;
+            return ranges::any_of(delta, [self, p, fself, &visit](auto d) -> decltype(auto) {
+                Pos n = p + d;
+                return self.in_border(n)
+                    && (!self[n] || self[n] == self[p] && !visit[n] && fself(n));
+            });
+        };
+        return _liberties(p);
     }
 
     // judge whether stones around `p` is captured by `p`
     // or `p` is captured by stones around `p`
-    bool is_capturing(Pos p) const
+    bool is_capturing(this BoardType const& self, Pos p)
     {
-        assert((*this)[p]);
-        if (!liberties(p))
-            return true;
-        for (auto d : delta) {
-            Pos n = p + d;
-            if (in_border(n) && (*this)[n] == -(*this)[p]
-                && !liberties(n))
-                return true;
-        }
-        return false;
+        assert(self[p]);
+
+        return !self.liberties(p)
+            || ranges::any_of(delta, [p, self](auto d) {
+                   Pos n = p + d;
+                   return self.in_border(n) && self[n] == -self[p]
+                       && !self.liberties(n);
+               });
     }
 };
 
@@ -90,6 +83,10 @@ struct RoleType {
     {
         *this = *this ? WHITE : BLACK;
     }
+    friend ostream& operator<<(ostream& out, RoleType role)
+    {
+        return out << (role ? "BLACK" : "WHITE");
+    }
 
 private:
     Value value;
@@ -103,9 +100,9 @@ public:
 
     State next_state(Pos p) const
     {
-        if (board[p])
-            throw string("invalid stone position for role") + (role ? "black" : "white");
-        auto state = *this;
+        assert(!board[p]);
+
+        auto state { *this };
         state.board[p] = role;
         state.moves.push_back(p);
         state.role.reverse();
@@ -116,7 +113,7 @@ public:
     {
         if (!moves.size())
             return {};
-        auto p = moves.back();
+        auto p { moves.back() };
         moves.pop_back();
         board[p] = 0;
         role.reverse();
@@ -133,22 +130,27 @@ public:
     }
     vector<Pos> available_actions() const
     {
-        vector<Pos> actions {};
         auto temp_board { board };
-        for (auto pos : board.index()) {
-            if (board[pos])
-                continue;
-            temp_board[pos] = role;
-            if (!temp_board.is_capturing(pos))
-                actions.push_back(pos);
+        return BoardType::index() | views::filter([&temp_board, this](auto pos) {
+            if (temp_board[pos])
+                return false;
+            temp_board[pos] = this->role;
+            bool res { !temp_board.is_capturing(pos) };
             temp_board[pos] = 0;
-        }
-        return actions;
+            return res;
+        }) | ranges::to<std::vector>();
     }
 };
 
 class Contest {
 public:
+    class StonePositionOccupiedException : public std::logic_error {
+        using logic_error::logic_error;
+    };
+    class TimeLimitExceededException : public std::runtime_error {
+        using runtime_error::runtime_error;
+    };
+
     State current {};
     using PlayerType = function<Pos(State)>;
     PlayerType player1, player2;
@@ -182,22 +184,24 @@ public:
     {
         ifstream readFile(path, ios::in);
         Pos p {};
-        while (readFile.good() && readFile >> p) {
+        while (readFile >> p)
             current.next_state(p);
-        }
         readFile.close();
     }
 
     bool play()
     {
-        auto&& player = current.role ? player1 : player2;
-        auto res = with_timeout(1000ms, player, current);
-        if (!res) {
+        auto&& player { current.role ? player1 : player2 };
+        auto p { with_timeout(1000ms, player, current) };
+        if (!p) {
             winner = -current.role;
-            cout << "timeout" << endl;
-            return false;
+            throw TimeLimitExceededException { to_string(current.role) + " exceeds the time limit." };
         }
-        current = current.next_state(*res);
+        if (current.board[*p]) {
+            winner = -current.role;
+            throw StonePositionOccupiedException { to_string(current.role) + " choose a occupied position." };
+        }
+        current = current.next_state(*p);
         winner = current.is_over();
         return !winner;
     }

@@ -79,7 +79,7 @@ struct BoardPrinter {
         printf(CSI "2J"); // Clear screen
 
         // Set scrolling margins to 3, h-2
-        printf(CSI "3;%dr", screen_size.y - 2); 
+        printf(CSI "3;%dr", screen_size.y - 2);
 
         printf(CSI "?25l"); // Hide the cursor
 
@@ -142,12 +142,12 @@ struct BoardPrinter {
 
         Pair p = { screen_size.x - 1, 1 };
         print_empty_line_negative(p.x);
-        for (auto option : vector(options.begin(), options.begin() + 4))
+        for (const auto& option : vector(options.begin(), options.begin() + 4))
             Pair::print(p, option), p.y += column_width;
 
         p = { screen_size.x, 1 };
         print_empty_line_negative(p.x);
-        for (auto option : vector(options.begin() + 4, options.begin() + 8))
+        for (const auto& option : vector(options.begin() + 4, options.begin() + 8))
             Pair::print(p, option), p.y += column_width;
     }
 
@@ -394,8 +394,7 @@ void crash(string error_message)
     exit(-1);
 }
 
-#ifndef botzone
-
+#ifdef NOGO
 int main()
 {
     HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE),
@@ -470,7 +469,7 @@ int main()
             }
             printer.echo_candidate(p = Pos {});
             if (!contest.play()) {
-                printer.print_banner(format(" Game ends. Player {} wins! ", contest.winner() == 1 ? "black" : "white"));
+                printer.print_banner(format(" Game ends. Player {} wins! ", contest.winner == 1 ? "black" : "white"));
             }
             printer.update_board(board);
         } else if (c == 24) { // exit

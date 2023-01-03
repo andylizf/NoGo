@@ -42,7 +42,6 @@ struct Pair {
         Pair res = *this;
         return res -= p;
     }
-    Pair operator-() const { return Pair { 0, 0 } - *this; }
     Pair& operator*=(Pair p)
     {
         x *= p.x, y *= p.y;
@@ -63,7 +62,6 @@ struct Pair {
         Pair res = *this;
         return res /= p;
     }
-    auto operator<=>(const Pair& p) const = default;
 
     static void go(Pair p)
     {
@@ -109,18 +107,17 @@ struct Pos : public Pair {
         return *this;
     }
 
-    friend ostream& operator<<(ostream& out, Pos p) { return out << to_string(p); }
+    friend ostream& operator<<(ostream& out, Pos p)
+    {
+        return out << string(1, p.get_digit())
+                   << string(1, p.get_alpha());
+    }
     friend istream& operator>>(istream& in, Pos& p)
     {
         char digit, alpha;
         in >> digit >> alpha;
         p.set_alpha(alpha).set_digit(digit);
         return in;
-    }
-    friend string to_string(Pos p)
-    {
-        return string(1, p.get_digit())
-            + string(1, p.get_alpha());
     }
 };
 
@@ -149,18 +146,25 @@ using duration_t = std::chrono::duration<
 // The return value is an optional<result_t>.
 // The optional is "empty" if the async execution timed out.
 template <typename TO, typename F, typename... Args>
-auto with_timeout(const TO& timeout, F&& f, Args&&... args)
+inline auto with_timeout(const TO& timeout, F&& f, Args&&... args)
 {
     if (timeout == duration_t<TO>::zero())
         return std::optional { f(args...) };
 
-    //std::printf("launching...\n");
+    // std::printf("launching...\n");
     auto future = std::async(std::launch::async,
         std::forward<F>(f), std::forward<Args...>(args...));
     auto status = future.wait_for(timeout);
-    //std::printf("wait_for() is back\n");
+    // std::printf("wait_for() is back\n");
     return status == std::future_status::ready
         ? std::optional { future.get() }
         : std::nullopt;
 }
 
+template <typename T>
+inline std::string to_string(const T& value)
+{
+    std::ostringstream ss;
+    ss << value;
+    return ss.str();
+}

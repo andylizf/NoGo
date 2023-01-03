@@ -1,8 +1,8 @@
+#include <chrono>
 #include <cmath>
 #include <iostream>
 #include <random>
 #include <vector>
-#include <chrono>
 
 #include "game.hpp"
 
@@ -66,8 +66,8 @@ inline MCTSNode* tree_policy(MCTSNode* node, double C)
 
     State state = node->state;
     if (!state.is_over()) {
-        auto moves = state.available_actions();
-        auto move = moves[node->children.size()];
+        auto moves { state.available_actions() };
+        auto move { moves[node->children.size()] };
         node = node->add_child(state.next_state(move));
     }
     return node;
@@ -90,7 +90,7 @@ inline double default_policy(MCTSNode* node)
 
 inline double default_policy2(MCTSNode* node)
 {
-    auto state = node->state;
+    auto state { node->state };
     int n3 = state.available_actions().size();
     state.role.reverse();
     int n4 = state.available_actions().size();
@@ -130,3 +130,5 @@ inline auto mcts_bot_player_generator(double C)
 }
 
 inline auto mcts_bot_player = mcts_bot_player_generator(0.1);
+
+#define SELECT
