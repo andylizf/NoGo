@@ -38,7 +38,7 @@ struct BoardType {
         BoardType visit {};
         auto _liberties = [self, &visit](this auto&& fself, Pos p) -> bool {
             visit[p] = true;
-            return ranges::any_of(delta, [self, p, fself, &visit](auto d) -> decltype(auto) {
+            return ranges::any_of(delta, [self, p, fself, &visit](auto d) {
                 Pos n = p + d;
                 return self.in_border(n)
                     && (!self[n] || self[n] == self[p] && !visit[n] && fself(n));
@@ -155,7 +155,7 @@ public:
     using PlayerType = function<Pos(State)>;
     PlayerType player1, player2;
     int winner { 0 };
-    Contest(PlayerType&& player1, PlayerType&& player2)
+    Contest(const PlayerType& player1, const PlayerType& player2)
         : player1(player1)
         , player2(player2)
     {

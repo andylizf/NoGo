@@ -4,6 +4,7 @@
 #include <format>
 #include <functional>
 #include <iostream>
+#include <ranges>
 #include <string>
 
 #include "bot.hpp"
@@ -12,6 +13,7 @@
 
 using namespace std;
 namespace fs = std::filesystem;
+namespace ranges = std::ranges;
 
 #define CSI "\x1b["
 #define ERASE CSI "X"
@@ -31,10 +33,11 @@ int getch_noblock()
 
 string repeat(const function<string(int)>&& genf, int times)
 {
-    std::ostringstream os;
-    for (int i = 0; i < times; i++)
-        os << genf(i);
-    return os.str();
+    return ranges::fold_left(
+        views::iota(0, times) | views::transform([genf](int i) {
+            return genf(i);
+        }),
+        "", std::plus {});
 }
 string repeat(string word, int times)
 {
