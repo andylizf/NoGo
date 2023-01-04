@@ -98,9 +98,12 @@ class State {
 public:
     BoardType board {};
     vector<Pos> moves {};
-    RoleType role { RoleType::BLACK };
+    RoleType role;
 
-    constexpr State() = default;
+    constexpr State(RoleType role = RoleType::BLACK)
+        : role(role)
+    {
+    }
 
     constexpr State next_state(this State const& self, Pos p)
     {

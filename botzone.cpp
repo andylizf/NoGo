@@ -5,33 +5,32 @@
 #ifdef BOTZONE
 int main()
 {
-    srand((unsigned)time(0));
-    string str;
-    getline(cin, str);
-    Json::Value input;
-    Json::Reader().parse(str, input);
+	string str;
+	getline(cin, str);
+	Json::Value input;
+	Json::Reader().parse(str, input);
 
-    auto get = [&input](const char* s, auto i) -> Pos {
-        return { input[s][i]["x"].asInt(), input[s][i]["y"].asInt() };
-    };
+	auto get = [&input](const char* s, unsigned i) -> Pos {
+		return { input[s][i]["x"].asInt(), input[s][i]["y"].asInt() };
+	};
 
-    bool isblack = get("requests", 0U) == Pos { -1, -1 };
-    State state { isblack };
-    if (!isblack)
-        state = state.next_state(get("requests", 0U));
+	auto role = get("requests", 0) == -1 ? RoleType::BLACK : RoleType::WHITE;
+	State state{ role };
+	if (!role)
+		state = state.next_state(get("requests", 0));
 
-    for (auto i = 0; i != input["responses"].size(); i++) {
-        state = state.next_state(get("responses", i));
-        state = state.next_state(get("requests", i + 1));
-    }
+	for (auto i = 0; i != input["responses"].size(); i++) {
+		state = state.next_state(get("responses", i));
+		state = state.next_state(get("requests", i + 1));
+	}
 
-    Pair result = mcts_bot_player(state);
+	Pair result = mcts_bot_player(state);
 
-    Json::Value action;
-    action["x"] = result.x, action["y"] = result.y;
-    Json::Value ret;
-    ret["response"] = action;
+	Json::Value action;
+	action["x"] = result.x, action["y"] = result.y;
+	Json::Value ret;
+	ret["response"] = action;
 
-    cout << Json::FastWriter().write(ret) << endl;
+	cout << Json::FastWriter().write(ret) << endl;
 }
 #endif
