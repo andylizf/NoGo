@@ -150,6 +150,7 @@ public:
     }
 };
 
+template <typename PlayerType>
 class Contest {
 public:
     class StonePositionOccupiedException : public std::logic_error {
@@ -160,10 +161,9 @@ public:
     };
 
     State current {};
-    using PlayerType = function<Pos(State)>;
     PlayerType player1, player2;
     int winner { 0 };
-    Contest(const PlayerType& player1, const PlayerType& player2)
+    constexpr Contest(const PlayerType& player1, const PlayerType& player2)
         : player1(player1)
         , player2(player2)
     {
@@ -176,7 +176,7 @@ public:
     3A
     */
 
-    int round() const
+    constexpr int round() const
     {
         return (int)current.moves.size();
     }
@@ -197,9 +197,9 @@ public:
         readFile.close();
     }
 
-    bool play()
+    constexpr bool play()
     {
-        auto&& player { current.role ? player1 : player2 };
+        auto player { current.role ? player1 : player2 };
         auto p { with_timeout(1000ms, player, current) };
         if (!p) {
             winner = -current.role;

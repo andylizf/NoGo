@@ -62,7 +62,7 @@ struct Pair {
         Pair res = *this;
         return res /= p;
     }
-	constexpr bool operator==(const Pair& p) const = default;
+    constexpr bool operator==(const Pair& p) const = default;
 
     static void go(Pair p)
     {
@@ -143,12 +143,11 @@ using duration_t = std::chrono::duration<
 // The return value is an optional<result_t>.
 // The optional is "empty" if the async execution timed out.
 template <typename TO, typename F, typename... Args>
-inline auto with_timeout(const TO& timeout, F&& f, Args&&... args)
+inline constexpr auto with_timeout(const TO& timeout, F&& f, Args&&... args)
 {
     if (timeout == duration_t<TO>::zero())
         return std::optional { f(args...) };
 
-    // std::printf("launching...\n");
     auto future = std::async(std::launch::async,
         std::forward<F>(f), std::forward<Args...>(args...));
     auto status = future.wait_for(timeout);
@@ -165,3 +164,10 @@ inline std::string to_string(const T& value)
     ss << value;
     return ss.str();
 }
+
+#define strcat_(x, y) x##y
+#define strcat(x, y) strcat_(x, y)
+#define PRINT_VALUE(x)                        \
+    template <int>                            \
+    struct strcat(strcat(value_of_, x), _is); \
+    static_assert(strcat(strcat(value_of_, x), _is) < x > ::x, "");

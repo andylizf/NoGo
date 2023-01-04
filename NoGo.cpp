@@ -232,7 +232,8 @@ struct BoardPrinter {
         }
     }
 
-    void save_file(Contest& contest)
+    template <typename T>
+    void save_file(Contest<T>& contest)
     {
         print_dialog(
             "Save modified situation? ", [&contest]() {
@@ -242,7 +243,8 @@ struct BoardPrinter {
     }
 
     string str5 = "Situation File to Load: ";
-    void read_file(Contest& contest, BoardPrinter& printer)
+    template <typename T>
+    void read_file(Contest<T>& contest, BoardPrinter& printer)
     {
         print_input_dialog(str5, [&contest, &printer](auto filename) {
             contest.current = {};

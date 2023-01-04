@@ -1,5 +1,5 @@
+#include "gcem.hpp"
 #include <chrono>
-#include <cmath>
 #include <iostream>
 #include <random>
 #include <vector>
@@ -18,33 +18,33 @@ struct MCTSNode {
     int visit { 0 };
     double quality { 0 };
 
-    MCTSNode(const State& state, MCTSNode* parent = nullptr)
+    constexpr MCTSNode(const State& state, MCTSNode* parent = nullptr)
         : state(state)
         , parent(parent)
     {
     }
 
-    ~MCTSNode()
+    constexpr ~MCTSNode()
     {
         for (MCTSNode* child : children) {
             delete child;
         }
     }
 
-    MCTSNode* add_child(const State& state)
+    constexpr MCTSNode* add_child(const State& state)
     {
         MCTSNode* child = new MCTSNode(state, this);
         children.push_back(child);
         return child;
     }
 
-    MCTSNode* best_child(double C)
+    constexpr MCTSNode* best_child(double C)
     {
         double max_ucb1 = -2e50;
         MCTSNode* max_child = nullptr;
         for (MCTSNode* child : children) {
             double ucb1 = child->quality / child->visit
-                + 2 * C * sqrt(log(2 * visit) / child->visit);
+                + 2 * C * gcem::sqrt(gcem::log(2 * visit) / child->visit);
             if (ucb1 > max_ucb1) {
                 max_ucb1 = ucb1;
                 max_child = child;
@@ -55,7 +55,7 @@ struct MCTSNode {
 };
 
 // select the node to expand
-inline MCTSNode* tree_policy(MCTSNode* node, double C)
+inline constexpr MCTSNode* tree_policy(MCTSNode* node, double C)
 {
     // if (!node->available_actions.size())
     //     node->available_actions = node->state.available_actions();
@@ -77,7 +77,7 @@ inline std::mt19937 rng(std::random_device {}());
 inline std::uniform_real_distribution<double> dist(0, 1);
 
 // simulate the game from the expanded node
-inline double default_policy(MCTSNode* node)
+inline constexpr double default_policy(MCTSNode* node)
 {
     State state = node->state;
     while (!state.is_over()) {
@@ -88,7 +88,7 @@ inline double default_policy(MCTSNode* node)
     return state.is_over() == -node->state.role;
 }
 
-inline double default_policy2(MCTSNode* node)
+inline constexpr double default_policy2(MCTSNode* node)
 {
     auto state { node->state };
     int n3 = state.available_actions().size();
@@ -99,7 +99,7 @@ inline double default_policy2(MCTSNode* node)
 }
 
 // backpropagate the result of the simulation
-inline void backup(MCTSNode* node, double reward)
+inline constexpr void backup(MCTSNode* node, double reward)
 {
     while (node) {
         node->visit++;
@@ -112,10 +112,11 @@ inline void backup(MCTSNode* node, double reward)
 inline Pos random_bot_player(const State& state)
 {
     auto actions = state.available_actions();
-    return actions[rand() % actions.size()];
+    int index = (int)actions.size() * dist(rng);
+    return actions[index];
 }
 
-inline auto mcts_bot_player_generator(double C)
+inline constexpr auto mcts_bot_player_generator(double C)
 {
     return [=](const State& state) {
         auto start = high_resolution_clock::now();
@@ -128,7 +129,30 @@ inline auto mcts_bot_player_generator(double C)
         return root->best_child(0)->state.moves.back();
     };
 }
+inline constexpr auto mcts_bot_player(State state)
+{
+    MCTSNode* root = new MCTSNode(state);
+    for (int i = 0; i < 10; i++) {
+        MCTSNode* expand_node = tree_policy(root, 0.1);
+        double reward = default_policy2(expand_node);
+        backup(expand_node, reward);
+    }
+    Pos best_move { root->best_child(0)->state.moves.back() };
+    delete root;
+    return best_move;
+}
 
-inline auto mcts_bot_player = mcts_bot_player_generator(0.1);
+inline auto mcts_bot_player_a(State state)
+{
+    MCTSNode* root = new MCTSNode(state);
+    for (int i = 0; i < 10000; i++) {
+        MCTSNode* expand_node = tree_policy(root, 0.1);
+        double reward = default_policy2(expand_node);
+        backup(expand_node, reward);
+    }
+    Pos best_move { root->best_child(0)->state.moves.back() };
+    delete root;
+    return best_move;
+}
 
 #define SELECT
