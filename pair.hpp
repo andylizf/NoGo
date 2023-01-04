@@ -122,11 +122,7 @@ struct Pos : public Pair {
     }
 };
 
-// Needs to be compiled with -std=c++1y for optionals support
-
 #include <chrono>
-#include <cstdio>
-#include <cstring>
 #include <future>
 #include <optional>
 #include <type_traits>
