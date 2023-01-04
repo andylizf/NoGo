@@ -15,14 +15,16 @@ using namespace std;
 namespace fs = std::filesystem;
 namespace ranges = std::ranges;
 
-struct BoardType {
+class BoardType {
     array<int, rank_n * rank_n> arr;
-    int& operator[](Pos p) { return arr[p.x * rank_n + p.y]; }
-    int operator[](Pos p) const { return arr[p.x * rank_n + p.y]; }
 
-    bool in_border(Pos p) const { return p.x >= 0 && p.y >= 0 && p.x < rank_n && p.y < rank_n; }
+public:
+    constexpr int& operator[](Pos p) { return arr[p.x * rank_n + p.y]; }
+    constexpr int operator[](Pos p) const { return arr[p.x * rank_n + p.y]; }
 
-    static auto index()
+    constexpr bool in_border(Pos p) const { return p.x >= 0 && p.y >= 0 && p.x < rank_n && p.y < rank_n; }
+
+    static constexpr auto index()
     {
         array<Pos, rank_n * rank_n> res;
         for (auto i : views::iota(0, rank_n))
@@ -31,9 +33,9 @@ struct BoardType {
         return res;
     }
 
-    static inline Pair delta[] = { Pair { -1, 0 }, Pair { 1, 0 }, Pair { 0, -1 }, Pair { 0, 1 } };
+    static constexpr array delta { Pair { -1, 0 }, Pair { 1, 0 }, Pair { 0, -1 }, Pair { 0, 1 } };
 
-    bool liberties(this BoardType const& self, Pos p)
+    constexpr bool liberties(this BoardType const& self, Pos p)
     {
         BoardType visit {};
         auto _liberties = [self, &visit](this auto&& fself, Pos p) -> bool {
@@ -49,7 +51,7 @@ struct BoardType {
 
     // judge whether stones around `p` is captured by `p`
     // or `p` is captured by stones around `p`
-    bool is_capturing(this BoardType const& self, Pos p)
+    constexpr bool is_capturing(this BoardType const& self, Pos p)
     {
         assert(self[p]);
 
@@ -79,9 +81,9 @@ struct RoleType {
     {
         return value == BLACK;
     }
-    constexpr void reverse()
+    constexpr void reverse(this RoleType& self)
     {
-        *this = *this ? WHITE : BLACK;
+        self = self ? WHITE : BLACK;
     }
     friend ostream& operator<<(ostream& out, RoleType role)
     {
@@ -98,21 +100,24 @@ public:
     vector<Pos> moves {};
     RoleType role { RoleType::BLACK };
 
-    State next_state(Pos p) const
+    constexpr State() = default;
+
+    constexpr State next_state(this State const& self, Pos p)
     {
         assert(!board[p]);
 
-        auto state { *this };
-        state.board[p] = role;
+        auto state { self };
+        state.board[p] = state.role;
         state.moves.push_back(p);
         state.role.reverse();
         return state;
     }
 
-    Pos revoke()
+    constexpr Pos revoke()
     {
         if (!moves.size())
             return {};
+
         auto p { moves.back() };
         moves.pop_back();
         board[p] = 0;
@@ -120,7 +125,7 @@ public:
         return p;
     }
 
-    int is_over() const
+    constexpr int is_over() const
     {
         if (moves.size() && board.is_capturing(moves.back())) // win
             return role;
@@ -128,7 +133,7 @@ public:
             return -role;
         return 0;
     }
-    vector<Pos> available_actions() const
+    constexpr vector<Pos> available_actions() const
     {
         auto temp_board { board };
         return BoardType::index() | views::filter([&temp_board, this](auto pos) {

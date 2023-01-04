@@ -11,53 +11,53 @@ constexpr int rank_n = 9;
 
 struct Pair {
     int x, y;
-    Pair(int x, int y)
+    constexpr Pair(int x, int y)
         : x(x)
         , y(y)
     {
     }
-    Pair(int x)
+    constexpr Pair(int x)
         : Pair(x, x)
     {
     }
 
     // explicit operator bool() { return x != -1 && y != -1; }
-    Pair& operator+=(Pair p)
+    constexpr Pair& operator+=(Pair p)
     {
         x += p.x, y += p.y;
         return *this;
     }
-    Pair operator+(Pair p) const
+    constexpr Pair operator+(Pair p) const
     {
         Pair res = *this;
         return res += p;
     }
-    Pair& operator-=(Pair p)
+    constexpr Pair& operator-=(Pair p)
     {
         x -= p.x, y -= p.y;
         return *this;
     }
-    Pair operator-(Pair p) const
+    constexpr Pair operator-(Pair p) const
     {
         Pair res = *this;
         return res -= p;
     }
-    Pair& operator*=(Pair p)
+    constexpr Pair& operator*=(Pair p)
     {
         x *= p.x, y *= p.y;
         return *this;
     }
-    Pair operator*(Pair p) const
+    constexpr Pair operator*(Pair p) const
     {
         Pair res = *this;
         return res *= p;
     }
-    Pair operator/=(Pair p)
+    constexpr Pair operator/=(Pair p)
     {
         x /= p.x, y /= p.y;
         return *this;
     }
-    Pair operator/(Pair p) const
+    constexpr Pair operator/(Pair p) const
     {
         Pair res = *this;
         return res /= p;
@@ -84,24 +84,24 @@ struct Pair {
 
 struct Pos : public Pair {
     using Pair::Pair;
-    static inline int uninited = -2;
-    Pos()
+    static constexpr int uninited = -2;
+    constexpr Pos()
         : Pair(uninited)
     {
     }
-    Pos(Pair p)
+    constexpr Pos(Pair p)
         : Pair(p)
     {
     }
 
-    char get_digit() { return x != uninited ? rank_n - x + '0' : ' '; }
-    Pos& set_digit(char i)
+    constexpr char get_digit() { return x != uninited ? rank_n - x + '0' : ' '; }
+    constexpr Pos& set_digit(char i)
     {
         x = (i != ' ' ? rank_n - (i - '0') : uninited);
         return *this;
     }
-    char get_alpha() { return y != uninited ? y + 'A' : ' '; }
-    Pos& set_alpha(char i)
+    constexpr char get_alpha() { return y != uninited ? y + 'A' : ' '; }
+    constexpr Pos& set_alpha(char i)
     {
         y = (i != ' ' ? i - 'A' : uninited);
         return *this;
@@ -155,7 +155,7 @@ inline auto with_timeout(const TO& timeout, F&& f, Args&&... args)
     auto future = std::async(std::launch::async,
         std::forward<F>(f), std::forward<Args...>(args...));
     auto status = future.wait_for(timeout);
-    // std::printf("wait_for() is back\n");
+
     return status == std::future_status::ready
         ? std::optional { future.get() }
         : std::nullopt;
