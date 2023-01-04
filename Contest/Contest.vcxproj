@@ -135,7 +135,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Contest.cpp" />
     <ClCompile Include="Select.cpp" />
   </ItemGroup>
   <ItemGroup>

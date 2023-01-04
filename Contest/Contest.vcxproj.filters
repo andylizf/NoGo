@@ -18,9 +18,6 @@
     <ClCompile Include="Select.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Contest.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Contest.hpp">
