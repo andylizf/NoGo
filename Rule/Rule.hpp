@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cassert>
+#include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include <functional>
@@ -9,11 +10,126 @@
 #include <ranges>
 #include <vector>
 
-#include "pair.hpp"
-
 using namespace std;
 namespace fs = std::filesystem;
 namespace ranges = std::ranges;
+
+#define CSI "\x1b["
+
+constexpr int rank_n = 9;
+
+struct Pair {
+    int x, y;
+    constexpr Pair(int x, int y)
+        : x(x)
+        , y(y)
+    {
+    }
+    constexpr Pair(int x)
+        : Pair(x, x)
+    {
+    }
+
+    // explicit operator bool() { return x != -1 && y != -1; }
+    constexpr Pair& operator+=(Pair p)
+    {
+        x += p.x, y += p.y;
+        return *this;
+    }
+    constexpr Pair operator+(Pair p) const
+    {
+        Pair res = *this;
+        return res += p;
+    }
+    constexpr Pair& operator-=(Pair p)
+    {
+        x -= p.x, y -= p.y;
+        return *this;
+    }
+    constexpr Pair operator-(Pair p) const
+    {
+        Pair res = *this;
+        return res -= p;
+    }
+    constexpr Pair& operator*=(Pair p)
+    {
+        x *= p.x, y *= p.y;
+        return *this;
+    }
+    constexpr Pair operator*(Pair p) const
+    {
+        Pair res = *this;
+        return res *= p;
+    }
+    constexpr Pair operator/=(Pair p)
+    {
+        x /= p.x, y /= p.y;
+        return *this;
+    }
+    constexpr Pair operator/(Pair p) const
+    {
+        Pair res = *this;
+        return res /= p;
+    }
+    constexpr bool operator==(const Pair& p) const = default;
+
+    static void go(Pair p)
+    {
+        printf(CSI "%d;%dH", p.x, p.y);
+    }
+    template <typename... Ts>
+    static void print(Pair p, Ts... args)
+    {
+        go(p);
+        (cout << ... << args);
+    }
+    template <typename... Ts>
+    static void println(Pair& p, Ts... args)
+    {
+        go(p);
+        (cout << ... << args);
+        p.x++;
+    }
+};
+
+struct Pos : public Pair {
+    using Pair::Pair;
+    static constexpr int uninited = -2;
+    constexpr Pos()
+        : Pair(uninited)
+    {
+    }
+    constexpr Pos(Pair p)
+        : Pair(p)
+    {
+    }
+
+    constexpr char get_digit() { return x != uninited ? rank_n - x + '0' : ' '; }
+    constexpr Pos& set_digit(char i)
+    {
+        x = (i != ' ' ? rank_n - (i - '0') : uninited);
+        return *this;
+    }
+    constexpr char get_alpha() { return y != uninited ? y + 'A' : ' '; }
+    constexpr Pos& set_alpha(char i)
+    {
+        y = (i != ' ' ? i - 'A' : uninited);
+        return *this;
+    }
+
+    friend ostream& operator<<(ostream& out, Pos p)
+    {
+        return out << string(1, p.get_digit())
+                   << string(1, p.get_alpha());
+    }
+    friend istream& operator>>(istream& in, Pos& p)
+    {
+        char digit, alpha;
+        in >> digit >> alpha;
+        p.set_alpha(alpha).set_digit(digit);
+        return in;
+    }
+};
 
 class BoardType {
     array<int, rank_n * rank_n> arr;
@@ -147,70 +263,5 @@ public:
             temp_board[pos] = 0;
             return res;
         }) | ranges::to<std::vector>();
-    }
-};
-
-class Contest {
-public:
-    class StonePositionOccupiedException : public std::logic_error {
-        using logic_error::logic_error;
-    };
-    class TimeLimitExceededException : public std::runtime_error {
-        using runtime_error::runtime_error;
-    };
-
-    State current {};
-    using PlayerType = function<Pos(State)>;
-    PlayerType player1, player2;
-    int winner { 0 };
-    Contest(const PlayerType& player1, const PlayerType& player2)
-        : player1(player1)
-        , player2(player2)
-    {
-    }
-    /*
-    example.nogo only saves the situation
-    1A
-    2D
-    6E
-    3A
-    */
-
-    int round() const
-    {
-        return (int)current.moves.size();
-    }
-
-    void save(fs::path path)
-    {
-        ofstream writeFile(path, ios::out);
-        for (auto p : current.moves)
-            writeFile << p << '\n';
-        writeFile.close();
-    }
-    void load(fs::path path)
-    {
-        ifstream readFile(path, ios::in);
-        Pos p {};
-        while (readFile >> p)
-            current.next_state(p);
-        readFile.close();
-    }
-
-    bool play()
-    {
-        auto&& player { current.role ? player1 : player2 };
-        auto p { with_timeout(1000ms, player, current) };
-        if (!p) {
-            winner = -current.role;
-            throw TimeLimitExceededException { to_string(current.role) + " exceeds the time limit." };
-        }
-        if (current.board[*p]) {
-            winner = -current.role;
-            throw StonePositionOccupiedException { to_string(current.role) + " choose a occupied position." };
-        }
-        current = current.next_state(*p);
-        winner = current.is_over();
-        return !winner;
     }
 };

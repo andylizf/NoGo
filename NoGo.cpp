@@ -7,9 +7,9 @@
 #include <ranges>
 #include <string>
 
-#include "bot.hpp"
-#include "game.hpp"
-#include "pair.hpp"
+#include "Bot/Bot.hpp"
+#include "Rule/Rule.hpp"
+#include "Contest.hpp"
 
 using namespace std;
 namespace fs = std::filesystem;
@@ -29,6 +29,14 @@ namespace ranges = std::ranges;
 int getch_noblock()
 {
     return _kbhit() ? _getch() : -1;
+}
+
+template <typename T>
+std::string to_string(const T& value)
+{
+    std::ostringstream ss;
+    ss << value;
+    return ss.str();
 }
 
 string repeat(const function<string(int)>&& genf, int times)
@@ -397,7 +405,6 @@ void crash(string error_message)
     exit(-1);
 }
 
-#ifdef NOGO
 int main()
 {
     HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE),
@@ -507,5 +514,3 @@ int main()
 }
 
 // TODO screen size change
-
-#endif

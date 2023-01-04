@@ -4,7 +4,7 @@
 #include <random>
 #include <vector>
 
-#include "game.hpp"
+#include "Rule/Rule.hpp"
 
 using namespace std;
 using namespace std::chrono;
