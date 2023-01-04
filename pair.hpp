@@ -62,6 +62,7 @@ struct Pair {
         Pair res = *this;
         return res /= p;
     }
+	constexpr bool operator==(const Pair& p) const = default;
 
     static void go(Pair p)
     {
